@@ -24,24 +24,17 @@ enum _Mode { save, view }
 class RideSummaryScreen extends StatefulWidget {
   const RideSummaryScreen.save({
     super.key,
-    required DateTime startedAt,
-    required int durationSeconds,
-    required int distanceMeters,
-    required double avgSpeedKmh,
-    required double maxSpeedKmh,
-    required List<TrackPoint> track,
+    required this.startedAt,
+    required this.durationSeconds,
+    required this.distanceMeters,
+    required this.avgSpeedKmh,
+    required this.maxSpeedKmh,
+    required this.track,
   })  : _mode = _Mode.save,
-        rideId = null,
-        startedAt = startedAt,
-        durationSeconds = durationSeconds,
-        distanceMeters = distanceMeters,
-        avgSpeedKmh = avgSpeedKmh,
-        maxSpeedKmh = maxSpeedKmh,
-        track = track;
+        rideId = null;
 
-  const RideSummaryScreen.view({super.key, required int rideId})
+  const RideSummaryScreen.view({super.key, required this.rideId})
       : _mode = _Mode.view,
-        rideId = rideId,
         startedAt = null,
         durationSeconds = null,
         distanceMeters = null,
