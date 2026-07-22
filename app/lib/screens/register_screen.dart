@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInput;
 import 'package:provider/provider.dart';
 
 import '../core/api_client.dart';
@@ -44,6 +45,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+      // Prompts the platform's "Save password?" dialog for whichever
+      // password manager is set as the autofill service.
+      TextInput.finishAutofillContext();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       setState(() => _error = apiErrorMessage(e));
@@ -68,31 +72,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 4),
                 Text('Start tracking every ride.', style: RedlText.meta(color: RedlColors.textSecondary)),
                 const SizedBox(height: 32),
-                TextFormField(
-                  controller: _nameController,
-                  style: RedlText.body(),
-                  autofillHints: const [AutofillHints.name],
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter your name' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  style: RedlText.body(),
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  style: RedlText.body(),
-                  obscureText: true,
-                  autofillHints: const [AutofillHints.newPassword],
-                  decoration: const InputDecoration(labelText: 'Password', helperText: 'At least 8 characters'),
-                  validator: (value) => (value == null || value.length < 8) ? 'At least 8 characters' : null,
-                  onFieldSubmitted: (_) => _submit(),
+                AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        style: RedlText.body(),
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.name],
+                        decoration: const InputDecoration(labelText: 'Name'),
+                        validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter your name' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        style: RedlText.body(),
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email, AutofillHints.username],
+                        decoration: const InputDecoration(labelText: 'Email'),
+                        validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        style: RedlText.body(),
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.newPassword],
+                        decoration: const InputDecoration(labelText: 'Password', helperText: 'At least 8 characters'),
+                        validator: (value) => (value == null || value.length < 8) ? 'At least 8 characters' : null,
+                        onFieldSubmitted: (_) => _submit(),
+                      ),
+                    ],
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

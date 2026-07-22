@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInput;
 import 'package:provider/provider.dart';
 
 import '../core/api_client.dart';
@@ -41,6 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+      // Prompts the platform's "Save password?" dialog for whichever
+      // password manager is set as the autofill service.
+      TextInput.finishAutofillContext();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       setState(() => _error = apiErrorMessage(e));
@@ -65,23 +69,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 4),
                 Text('Log in to keep tracking your rides.', style: RedlText.meta(color: RedlColors.textSecondary)),
                 const SizedBox(height: 32),
-                TextFormField(
-                  controller: _emailController,
-                  style: RedlText.body(),
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  style: RedlText.body(),
-                  obscureText: true,
-                  autofillHints: const [AutofillHints.password],
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  validator: (value) => (value == null || value.isEmpty) ? 'Enter your password' : null,
-                  onFieldSubmitted: (_) => _submit(),
+                AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _emailController,
+                        style: RedlText.body(),
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email, AutofillHints.username],
+                        decoration: const InputDecoration(labelText: 'Email'),
+                        validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        style: RedlText.body(),
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: const InputDecoration(labelText: 'Password'),
+                        validator: (value) => (value == null || value.isEmpty) ? 'Enter your password' : null,
+                        onFieldSubmitted: (_) => _submit(),
+                      ),
+                    ],
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
