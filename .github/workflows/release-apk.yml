@@ -9,6 +9,10 @@
 # sideloadable APK with no keystore secrets required. That's fine for
 # POC/internal distribution; a real Play Store release would need a proper
 # upload keystore configured as CI secrets.
+#
+# API URL: baked in at build time via --dart-define (see PROD_API_URL below)
+# - release builds always point at the production backend, not the
+# emulator-only default used by plain `flutter run`.
 name: Release APK
 
 on:
@@ -23,6 +27,11 @@ on:
 
 permissions:
   contents: write
+
+env:
+  # The API_BASE_URL baked into release builds - REDL's production backend.
+  # Override with a different value if this ever needs to point elsewhere.
+  PROD_API_URL: https://redl.besse.dev/api
 
 jobs:
   build-and-release:
@@ -53,7 +62,7 @@ jobs:
         run: flutter test
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.PROD_API_URL }}
 
       - name: Determine version
         id: version
