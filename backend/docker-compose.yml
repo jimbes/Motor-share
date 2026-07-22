@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    env_file:
+      - .env.docker
+    depends_on:
+      - mysql
+    volumes:
+      - storage:/var/www/html/storage/app/public
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: redl
+      MYSQL_USER: redl
+      MYSQL_PASSWORD: redl
+      MYSQL_ROOT_PASSWORD: redl_root
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
+  storage:

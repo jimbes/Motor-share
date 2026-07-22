@@ -1,0 +1,20 @@
+# Example Apache vhost for the REDL API on a classic (non-Docker) server.
+# Laravel already ships public/.htaccess with the mod_rewrite rules needed;
+# you only need to point the vhost's DocumentRoot at /public and allow overrides.
+
+<VirtualHost *:80>
+    ServerName api.your-domain.com
+    DocumentRoot /var/www/redl-api/public
+
+    <Directory /var/www/redl-api/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/redl-api-error.log
+    CustomLog ${APACHE_LOG_DIR}/redl-api-access.log combined
+</VirtualHost>
+
+# Requires: sudo a2enmod rewrite && sudo systemctl restart apache2
+# Then request HTTPS with certbot:
+#   sudo certbot --apache -d api.your-domain.com

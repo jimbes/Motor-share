@@ -1,0 +1,517 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../core/api_client.dart';
+import '../core/format.dart';
+import '../core/models/bike.dart';
+import '../core/models/ride.dart';
+import '../core/models/ride_comment.dart';
+import '../core/models/track_point.dart';
+import '../core/repositories/bike_repository.dart';
+import '../core/repositories/ride_repository.dart';
+import '../state/auth_provider.dart';
+import '../theme/redl_colors.dart';
+import '../theme/redl_spacing.dart';
+import '../theme/redl_text_styles.dart';
+import '../widgets/redl_buttons.dart';
+import '../widgets/route_preview_map.dart';
+
+enum _Mode { save, view }
+
+class RideSummaryScreen extends StatefulWidget {
+  const RideSummaryScreen.save({
+    super.key,
+    required DateTime startedAt,
+    required int durationSeconds,
+    required int distanceMeters,
+    required double avgSpeedKmh,
+    required double maxSpeedKmh,
+    required List<TrackPoint> track,
+  })  : _mode = _Mode.save,
+        rideId = null,
+        startedAt = startedAt,
+        durationSeconds = durationSeconds,
+        distanceMeters = distanceMeters,
+        avgSpeedKmh = avgSpeedKmh,
+        maxSpeedKmh = maxSpeedKmh,
+        track = track;
+
+  const RideSummaryScreen.view({super.key, required int rideId})
+      : _mode = _Mode.view,
+        rideId = rideId,
+        startedAt = null,
+        durationSeconds = null,
+        distanceMeters = null,
+        avgSpeedKmh = null,
+        maxSpeedKmh = null,
+        track = null;
+
+  final _Mode _mode;
+  final int? rideId;
+  final DateTime? startedAt;
+  final int? durationSeconds;
+  final int? distanceMeters;
+  final double? avgSpeedKmh;
+  final double? maxSpeedKmh;
+  final List<TrackPoint>? track;
+
+  @override
+  State<RideSummaryScreen> createState() => _RideSummaryScreenState();
+}
+
+class _RideSummaryScreenState extends State<RideSummaryScreen> {
+  // Save mode.
+  final _titleController = TextEditingController(text: 'Morning Ride');
+  final _descriptionController = TextEditingController();
+  List<Bike> _bikes = [];
+  Bike? _selectedBike;
+  final List<XFile> _selectedPhotos = [];
+  bool _saving = false;
+  String? _saveError;
+
+  // View mode.
+  Ride? _ride;
+  bool _loadingRide = true;
+  String? _loadError;
+  final _commentController = TextEditingController();
+  bool _postingComment = false;
+
+  bool get _isSaveMode => widget._mode == _Mode.save;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isSaveMode) {
+      _loadBikes();
+    } else {
+      _loadRide();
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadBikes() async {
+    try {
+      final bikes = await context.read<BikeRepository>().list();
+      if (mounted) setState(() => _bikes = bikes);
+    } catch (_) {
+      // Non-fatal - the rider can still save without picking a bike.
+    }
+  }
+
+  Future<void> _loadRide() async {
+    setState(() {
+      _loadingRide = true;
+      _loadError = null;
+    });
+    try {
+      final ride = await context.read<RideRepository>().show(widget.rideId!);
+      if (mounted) setState(() => _ride = ride);
+    } catch (_) {
+      if (mounted) setState(() => _loadError = 'Could not load this ride.');
+    } finally {
+      if (mounted) setState(() => _loadingRide = false);
+    }
+  }
+
+  Future<void> _pickPhotos() async {
+    final picked = await ImagePicker().pickMultiImage(imageQuality: 85);
+    if (picked.isNotEmpty) setState(() => _selectedPhotos.addAll(picked));
+  }
+
+  Future<void> _save() async {
+    if (_titleController.text.trim().isEmpty) {
+      setState(() => _saveError = 'Give your ride a title.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+
+    try {
+      final repo = context.read<RideRepository>();
+      final ride = await repo.upload(
+        bikeId: _selectedBike?.id,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        startedAt: widget.startedAt!,
+        durationSeconds: widget.durationSeconds!,
+        distanceMeters: widget.distanceMeters!,
+        avgSpeedKmh: widget.avgSpeedKmh!,
+        maxSpeedKmh: widget.maxSpeedKmh!,
+        track: widget.track!,
+      );
+
+      for (final photo in _selectedPhotos) {
+        await repo.uploadPhoto(ride.id, File(photo.path));
+      }
+
+      if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (e) {
+      setState(() => _saveError = apiErrorMessage(e));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    final ride = _ride;
+    if (ride == null) return;
+    final repo = context.read<RideRepository>();
+    setState(() {
+      _ride = ride.copyWith(likedByMe: !ride.likedByMe, likesCount: ride.likesCount + (ride.likedByMe ? -1 : 1));
+    });
+    try {
+      final result = ride.likedByMe ? await repo.unlike(ride.id) : await repo.like(ride.id);
+      if (mounted) setState(() => _ride = _ride!.copyWith(likesCount: result.likesCount, likedByMe: result.likedByMe));
+    } catch (_) {
+      if (mounted) setState(() => _ride = ride);
+    }
+  }
+
+  Future<void> _postComment() async {
+    final body = _commentController.text.trim();
+    final ride = _ride;
+    if (body.isEmpty || ride == null) return;
+
+    setState(() => _postingComment = true);
+    try {
+      final comment = await context.read<RideRepository>().addComment(ride.id, body);
+      if (!mounted) return;
+      setState(() {
+        _ride = ride.copyWith(
+          comments: [...?ride.comments, comment],
+          commentsCount: ride.commentsCount + 1,
+        );
+        _commentController.clear();
+      });
+    } catch (_) {
+      // Leave the draft in place so the rider can retry.
+    } finally {
+      if (mounted) setState(() => _postingComment = false);
+    }
+  }
+
+  Future<void> _deleteComment(RideComment comment) async {
+    final ride = _ride;
+    if (ride == null) return;
+    try {
+      await context.read<RideRepository>().deleteComment(comment.id);
+      if (!mounted) return;
+      setState(() {
+        _ride = ride.copyWith(
+          comments: ride.comments?.where((c) => c.id != comment.id).toList(),
+          commentsCount: ride.commentsCount - 1,
+        );
+      });
+    } catch (_) {
+      // Ignore - comment stays visible, user can retry.
+    }
+  }
+
+  double _elevationGainMeters(List<TrackPoint> points) {
+    var gain = 0.0;
+    for (var i = 1; i < points.length; i++) {
+      final prevAlt = points[i - 1].alt;
+      final alt = points[i].alt;
+      if (prevAlt != null && alt != null && alt > prevAlt) gain += alt - prevAlt;
+    }
+    return gain;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isSaveMode) return _buildSaveMode(context);
+    return _buildViewMode(context);
+  }
+
+  Widget _buildSaveMode(BuildContext context) {
+    final elevation = _elevationGainMeters(widget.track!);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ride Complete')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(RedlSpacing.screenPadding, 16, RedlSpacing.screenPadding, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(RedlRadius.sm),
+                child: SizedBox(height: 200, child: RoutePreviewMap(points: widget.track!)),
+              ),
+              const SizedBox(height: 20),
+              _StatGrid(
+                distanceMeters: widget.distanceMeters!,
+                durationSeconds: widget.durationSeconds!,
+                avgSpeedKmh: widget.avgSpeedKmh!,
+                maxSpeedKmh: widget.maxSpeedKmh!,
+                elevationMeters: elevation,
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _titleController,
+                style: RedlText.body(),
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _descriptionController,
+                style: RedlText.body(),
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description (optional)'),
+              ),
+              const SizedBox(height: 16),
+              if (_bikes.isNotEmpty)
+                DropdownButtonFormField<Bike?>(
+                  initialValue: _selectedBike,
+                  dropdownColor: RedlColors.surface2,
+                  style: RedlText.body(),
+                  decoration: const InputDecoration(labelText: 'Bike (optional)'),
+                  items: [
+                    const DropdownMenuItem<Bike?>(value: null, child: Text('None')),
+                    ..._bikes.map((b) => DropdownMenuItem<Bike?>(value: b, child: Text(b.displayName))),
+                  ],
+                  onChanged: (value) => setState(() => _selectedBike = value),
+                ),
+              const SizedBox(height: 20),
+              Text('PHOTOS', style: RedlText.eyebrow()),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 72,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    ..._selectedPhotos.map((photo) => Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(RedlRadius.sm),
+                            child: Image.file(File(photo.path), width: 72, height: 72, fit: BoxFit.cover),
+                          ),
+                        )),
+                    GestureDetector(
+                      onTap: _pickPhotos,
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(color: RedlColors.surface2, borderRadius: BorderRadius.circular(RedlRadius.sm)),
+                        child: const Icon(Icons.add_a_photo_outlined, color: RedlColors.textSecondary, size: 22),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_saveError != null) ...[
+                const SizedBox(height: 16),
+                Text(_saveError!, style: RedlText.body(fontSize: 13, color: RedlColors.accentTint)),
+              ],
+              const SizedBox(height: 24),
+              RedlPrimaryButton(label: 'Save Ride', onPressed: _save, loading: _saving),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewMode(BuildContext context) {
+    if (_loadingRide) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator(color: RedlColors.accent)));
+    }
+    if (_loadError != null || _ride == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(child: Text(_loadError ?? 'Ride not found.', style: RedlText.body(color: RedlColors.textSecondary))),
+      );
+    }
+
+    final ride = _ride!;
+    final elevation = _elevationGainMeters(ride.routeLine);
+    final myUserId = context.watch<AuthProvider>().user?.id;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(ride.title)),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(RedlSpacing.screenPadding, 8, RedlSpacing.screenPadding, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('${ride.user.name} · ${formatRelativeDate(ride.startedAt)}', style: RedlText.meta()),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(RedlRadius.sm),
+                child: SizedBox(height: 220, child: RoutePreviewMap(points: ride.routeLine, interactive: true)),
+              ),
+              const SizedBox(height: 20),
+              _StatGrid(
+                distanceMeters: ride.distanceMeters,
+                durationSeconds: ride.durationSeconds,
+                avgSpeedKmh: ride.avgSpeedKmh,
+                maxSpeedKmh: ride.maxSpeedKmh,
+                elevationMeters: elevation,
+              ),
+              if (ride.description != null && ride.description!.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(ride.description!, style: RedlText.body(color: RedlColors.textSecondary)),
+              ],
+              if (ride.bike != null) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.two_wheeler_rounded, size: 16, color: RedlColors.textMuted),
+                    const SizedBox(width: 6),
+                    Text(ride.bike!.displayName, style: RedlText.meta(fontSize: 12)),
+                  ],
+                ),
+              ],
+              if (ride.photos.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 100,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: ride.photos.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) => ClipRRect(
+                      borderRadius: BorderRadius.circular(RedlRadius.sm),
+                      child: Image.network(ride.photos[i].url, width: 100, height: 100, fit: BoxFit.cover),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: _toggleLike,
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        Icon(
+                          ride.likedByMe ? Icons.favorite : Icons.favorite_border,
+                          size: 20,
+                          color: ride.likedByMe ? RedlColors.accent : RedlColors.textMuted,
+                        ),
+                        const SizedBox(width: 6),
+                        Text('${ride.likesCount} likes', style: RedlText.body(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Icon(Icons.chat_bubble_outline, size: 18, color: RedlColors.textMuted),
+                  const SizedBox(width: 6),
+                  Text('${ride.commentsCount} comments', style: RedlText.body(fontSize: 13)),
+                ],
+              ),
+              const Divider(height: 32),
+              Text('COMMENTS', style: RedlText.eyebrow()),
+              const SizedBox(height: 12),
+              ...?ride.comments?.map((comment) => Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const CircleAvatar(radius: 14, backgroundColor: RedlColors.surface4),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(comment.user.name, style: RedlText.title(fontSize: 12)),
+                              const SizedBox(height: 2),
+                              Text(comment.body, style: RedlText.body(fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        if (comment.user.id == myUserId)
+                          GestureDetector(
+                            onTap: () => _deleteComment(comment),
+                            child: const Icon(Icons.close, size: 16, color: RedlColors.textMuted),
+                          ),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      style: RedlText.body(fontSize: 13),
+                      decoration: const InputDecoration(hintText: 'Add a comment...'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _postingComment
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: RedlColors.accent))
+                      : IconButton(onPressed: _postComment, icon: const Icon(Icons.send, color: RedlColors.accent)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatGrid extends StatelessWidget {
+  const _StatGrid({
+    required this.distanceMeters,
+    required this.durationSeconds,
+    required this.avgSpeedKmh,
+    required this.maxSpeedKmh,
+    required this.elevationMeters,
+  });
+
+  final int distanceMeters;
+  final int durationSeconds;
+  final double avgSpeedKmh;
+  final double maxSpeedKmh;
+  final double elevationMeters;
+
+  @override
+  Widget build(BuildContext context) {
+    final cells = [
+      ('DISTANCE', formatDistanceKm(distanceMeters / 1000)),
+      ('DURATION', formatDuration(Duration(seconds: durationSeconds))),
+      ('AVG SPEED', formatSpeedKmh(avgSpeedKmh)),
+      ('ELEVATION', '${elevationMeters.round()} m'),
+    ];
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 2.1,
+      children: cells
+          .map((c) => Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: RedlColors.surface2, borderRadius: BorderRadius.circular(RedlRadius.sm)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(c.$1, style: RedlText.eyebrow(fontSize: 9)),
+                    const SizedBox(height: 6),
+                    Text(c.$2, style: RedlText.statValue(fontSize: 19)),
+                  ],
+                ),
+              ))
+          .toList(),
+    );
+  }
+}

@@ -1,5 +1,23 @@
 # Motor-Share POC — Strava-style Motorbike Tracking App
 
+## Status: implemented
+
+Everything below has been built. Backend: full API (auth, bikes, rides,
+photos, likes, comments), 32 passing feature tests, Docker for local dev,
+a classic-PHP-server deploy guide for the distant server. App: all six
+screens wired end-to-end against the API, branded with the REDL design
+system, `flutter analyze` clean, 18 passing tests. See root `README.md` for
+quick start and `DESIGN.md` for the brand reference.
+
+Not yet done: on-device GPS/background-tracking testing (needs a real
+phone), a custom app launcher icon, and actually deploying to the distant
+server (needs its access details from Jimmy).
+
+One deviation from the original plan: production DB is MySQL (confirmed),
+and rather than Docker on the distant server, that server runs classic
+PHP-FPM + Nginx/Apache — Docker is used for local development only. See
+`backend/DEPLOY.md`.
+
 ## Context
 
 Jimmy wants a Strava-like app focused on motorbikes (later, all motorsport). A previous Flutter attempt was painful largely because of Google Maps; the hard requirement is **no Google Maps dependency — OpenStreetMap only**. The repository is empty, so this is a greenfield build.
@@ -99,27 +117,32 @@ Laravel feature tests (Pest or PHPUnit) on SQLite: auth flow, bike CRUD, ride up
 
 ## Getting started on the laptop
 
-```bash
-# Prerequisites: PHP 8.2+, Composer, Flutter SDK (https://docs.flutter.dev/get-started/install), Android Studio or Android SDK
+The code is already built — this is how to run it, not scaffold it.
 
-# 1. Backend
-composer create-project laravel/laravel backend
+```bash
+# Prerequisites: Flutter SDK (https://docs.flutter.dev/get-started/install),
+# Android Studio/SDK, and either PHP 8.3+/Composer or Docker for the backend.
+
+# 1. Backend - pick one:
 cd backend
-composer require laravel/sanctum
-php artisan install:api          # Laravel 11+: enables routes/api.php + Sanctum
-touch database/database.sqlite   # SQLite for local dev (default in Laravel 11+)
+docker compose up -d --build          # Docker (recommended, needs nothing else installed)
+# API at http://localhost:8000/api
+
+# --- or, plain PHP ---
+composer install
+touch database/database.sqlite
 php artisan migrate
-php artisan serve                # API at http://127.0.0.1:8000
+php artisan serve                     # API at http://127.0.0.1:8000/api
 
 # 2. Flutter app
-flutter create app --platforms=android --org com.motorshare
-cd app
-flutter pub add flutter_map latlong2 geolocator image_picker dio flutter_secure_storage provider
-flutter run                      # with an Android device/emulator connected
-# On a real device, point the app's API_BASE_URL at your laptop's LAN IP, e.g. http://192.168.1.x:8000
+cd ../app
+flutter pub get
+flutter run
+# Physical device: flutter run --dart-define=API_BASE_URL=http://<laptop-LAN-IP>:8000/api
 ```
 
-Then follow the **Implementation order** above.
+For deploying the backend to the real distant server (classic PHP hosting,
+no Docker), see `backend/DEPLOY.md`.
 
 ## Out of scope for this POC (later iterations)
 

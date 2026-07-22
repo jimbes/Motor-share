@@ -1,0 +1,198 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../core/models/bike.dart';
+import '../core/models/rider_stats.dart';
+import '../core/repositories/bike_repository.dart';
+import '../core/repositories/ride_repository.dart';
+import '../state/auth_provider.dart';
+import '../theme/redl_colors.dart';
+import '../theme/redl_spacing.dart';
+import '../theme/redl_text_styles.dart';
+import 'garage_screen.dart';
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  RiderStats? _stats;
+  List<Bike> _bikes = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final results = await Future.wait([
+        context.read<RideRepository>().myStats(),
+        context.read<BikeRepository>().list(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _stats = results[0] as RiderStats;
+          _bikes = results[1] as List<Bike>;
+        });
+      }
+    } catch (_) {
+      // Non-fatal - profile still renders with whatever loaded.
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    final memberSince = user?.createdAt?.year.toString() ?? '—';
+
+    return Scaffold(
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              SizedBox(
+                height: 164,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      top: 60,
+                      left: 0,
+                      right: 0,
+                      height: 120,
+                      child: Container(color: RedlColors.accent),
+                    ),
+                    Positioned(
+                      top: 60 + 120 - 44,
+                      left: RedlSpacing.screenPadding,
+                      child: Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          color: RedlColors.surface4,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: RedlColors.base, width: 4),
+                        ),
+                        child: const Icon(Icons.person, color: RedlColors.baseAlt, size: 36),
+                      ),
+                    ),
+                    Positioned(
+                      right: RedlSpacing.screenPadding,
+                      top: 72,
+                      child: IconButton(
+                        onPressed: () => context.read<AuthProvider>().logout(),
+                        icon: const Icon(Icons.logout, color: RedlColors.baseAlt),
+                        tooltip: 'Log out',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: RedlSpacing.screenPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user?.name ?? '', style: RedlText.title(fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text('Rider since $memberSince', style: RedlText.meta()),
+                    const SizedBox(height: 20),
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator(color: RedlColors.accent)),
+                      )
+                    else
+                      Container(
+                        decoration: const BoxDecoration(
+                          border: Border.symmetric(horizontal: BorderSide(color: RedlColors.divider)),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Row(
+                          children: [
+                            _ProfileStat(label: 'RIDES', value: '${_stats?.ridesCount ?? 0}'),
+                            _ProfileStat(label: 'DISTANCE', value: '${(_stats?.distanceKm ?? 0).toStringAsFixed(0)} km'),
+                            _ProfileStat(label: 'THIS WEEK', value: '${(_stats?.weekDistanceKm ?? 0).toStringAsFixed(0)} km'),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    Text('VEHICLES', style: RedlText.eyebrow()),
+                    const SizedBox(height: 12),
+                    if (_bikes.isEmpty)
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GarageScreen())).then((_) => _load()),
+                        child: Text('Add a bike to your garage', style: RedlText.body(fontSize: 13, color: RedlColors.textSecondary)),
+                      )
+                    else
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: _bikes
+                            .map((bike) => GestureDetector(
+                                  onTap: () => Navigator.of(context)
+                                      .push(MaterialPageRoute(builder: (_) => const GarageScreen()))
+                                      .then((_) => _load()),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(color: RedlColors.surface2, borderRadius: BorderRadius.circular(RedlRadius.sm)),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 36,
+                                          height: 26,
+                                          decoration: BoxDecoration(color: RedlColors.surface4, borderRadius: BorderRadius.circular(RedlRadius.sm)),
+                                          child: const Icon(Icons.two_wheeler_rounded, size: 16, color: RedlColors.baseAlt),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(bike.displayName, style: RedlText.body(fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileStat extends StatelessWidget {
+  const _ProfileStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(value, style: RedlText.statValue(fontSize: 17)),
+          const SizedBox(height: 4),
+          Text(label, style: RedlText.eyebrow(fontSize: 9)),
+        ],
+      ),
+    );
+  }
+}

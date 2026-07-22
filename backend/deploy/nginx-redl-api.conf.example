@@ -1,0 +1,30 @@
+# Example Nginx server block for the REDL API on a classic (non-Docker) server.
+# Adjust the domain, PHP-FPM socket/port, and paths to match your host.
+
+server {
+    listen 80;
+    server_name api.your-domain.com;
+
+    root /var/www/redl-api/public;
+    index index.php;
+
+    client_max_body_size 25m;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+    }
+
+    location ~ /\.(?!well-known) {
+        deny all;
+    }
+}
+
+# Then request HTTPS with certbot:
+#   sudo certbot --nginx -d api.your-domain.com

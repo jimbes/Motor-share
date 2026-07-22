@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" width="1280" height="440" fill="none">
+  <path d="M40 170 C40 90 84 40 160 52" stroke="#8E2430" stroke-width="14" stroke-linecap="round"></path>
+  <line x1="57" y1="57" x2="85" y2="85" stroke="#8E2430" stroke-width="14" stroke-linecap="round"></line>
+  <text x="230" y="140" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="88" letter-spacing="10" fill="#1A1A1A">REDL</text>
+</svg>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #0F0E0D; }
+  .redl-screens * { box-sizing: border-box; font-family: 'Inter', Helvetica, Arial, sans-serif; }
+</style>
+</helmet>
+
+<div class="redl-screens" style="width:2040px; padding:80px 60px; background:#0F0E0D; display:flex; flex-direction:column; gap:40px;">
+
+  <div style="display:flex; flex-direction:column; gap:8px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <svg width="34" height="34" viewBox="0 0 52 52" fill="none">
+        <path d="M6 40 C 6 40, 16 12, 30 12 C 40 12, 40 22, 32 24 C 24 26, 24 34, 34 34 C 42 34, 46 26, 46 26" stroke="#8E2430" stroke-width="2.5" stroke-linecap="round" fill="none"></path>
+      </svg>
+      <div style="font-size:24px; font-weight:800; letter-spacing:5px; color:#F2EFEA;">REDL</div>
+    </div>
+    <div style="font-size:15px; font-weight:400; color:#B3ABA2; letter-spacing:0.2px;">App screens &mdash; reference mockups for Flutter build</div>
+  </div>
+
+  <div style="display:flex; gap:56px; align-items:flex-start;">
+
+    <!-- Screen 1: Onboarding -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:2px; color:#5C5750; text-transform:uppercase;">01 &mdash; Onboarding</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 360 }}" height="{{ 780 }}" style="width:360px; height:780px; flex-shrink:0;" hint-size="360px,780px">
+        <div style="height:100%; display:flex; flex-direction:column; background:#1A1A1A; padding:120px 32px 40px; align-items:center; text-align:center; gap:28px;">
+          <svg width="56" height="56" viewBox="0 0 52 52" fill="none">
+            <path d="M6 40 C 6 40, 16 12, 30 12 C 40 12, 40 22, 32 24 C 24 26, 24 34, 34 34 C 42 34, 46 26, 46 26" stroke="#8E2430" stroke-width="2.5" stroke-linecap="round" fill="none"></path>
+          </svg>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="font-size:22px; font-weight:800; letter-spacing:4px; color:#F2EFEA;">REDL</div>
+            <div style="font-size:15px; font-weight:400; color:#B3ABA2; line-height:1.5;">Track every apex.</div>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="width:100%; display:flex; flex-direction:column; gap:12px;">
+            <div style="width:100%; background:#8E2430; border-radius:4px; padding:16px; text-align:center; font-size:14px; font-weight:700; letter-spacing:0.5px; color:#F2EFEA;">Create Account</div>
+            <div style="width:100%; border:1px solid #3A3733; border-radius:4px; padding:16px; text-align:center; font-size:14px; font-weight:700; letter-spacing:0.5px; color:#F2EFEA;">Log In</div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- Screen 2: Home/Feed -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:2px; color:#5C5750; text-transform:uppercase;">02 &mdash; Home / Feed</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 360 }}" height="{{ 780 }}" style="width:360px; height:780px; flex-shrink:0;" hint-size="360px,780px">
+        <div style="height:100%; overflow:auto; background:#1A1A1A; padding:64px 20px 24px; display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:#3A3733;"></div>
+              <div style="font-size:14px; font-weight:700; color:#F2EFEA;">Hey, Marco</div>
+            </div>
+            <div style="width:20px; height:20px; border-radius:50%; border:1.4px solid #5C5750;"></div>
+          </div>
+          <div style="background:#8E2430; border-radius:6px; padding:18px 20px; display:flex; flex-direction:column; gap:6px;">
+            <div style="font-size:10px; letter-spacing:1.6px; color:#F2EFEA; text-transform:uppercase; font-weight:700;">This week</div>
+            <div style="font-size:30px; font-weight:800; color:#F2EFEA;">482 km</div>
+            <div style="font-size:11px; color:#E6C9CC;">12 rides &middot; 6,340 m elevation</div>
+          </div>
+          <div style="font-size:11px; letter-spacing:1.2px; color:#5C5750; font-weight:700; text-transform:uppercase; margin-top:4px;">Recent activity</div>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="width:52px; height:52px; border-radius:4px; flex-shrink:0; background:#2A2825;"></div>
+              <div style="display:flex; flex-direction:column; gap:3px;">
+                <div style="font-size:13px; font-weight:700; color:#F2EFEA;">Sunday Loop</div>
+                <div style="font-size:10.5px; color:#5C5750;">64 km &middot; 1h 42m</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="width:52px; height:52px; border-radius:4px; flex-shrink:0; background:#2A2825;"></div>
+              <div style="display:flex; flex-direction:column; gap:3px;">
+                <div style="font-size:13px; font-weight:700; color:#F2EFEA;">Coastal Run</div>
+                <div style="font-size:10.5px; color:#5C5750;">38 km &middot; 52m</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="width:52px; height:52px; border-radius:4px; flex-shrink:0; background:#2A2825;"></div>
+              <div style="display:flex; flex-direction:column; gap:3px;">
+                <div style="font-size:13px; font-weight:700; color:#F2EFEA;">Hillclimb Trial</div>
+                <div style="font-size:10.5px; color:#5C5750;">21 km &middot; 38m</div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;"></div>
+          <div style="display:flex; justify-content:space-around; padding-top:16px; border-top:1px solid #2A2825;">
+            <div style="width:22px; height:22px; border-radius:4px; background:#8E2430;"></div>
+            <div style="width:22px; height:22px; border-radius:4px; background:#3A3733;"></div>
+            <div style="width:22px; height:22px; border-radius:4px; background:#3A3733;"></div>
+            <div style="width:22px; height:22px; border-radius:4px; background:#3A3733;"></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- Screen 3: Live Recording -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:2px; color:#5C5750; text-transform:uppercase;">03 &mdash; Live Recording</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 360 }}" height="{{ 780 }}" style="width:360px; height:780px; flex-shrink:0;" hint-size="360px,780px">
+        <div style="height:100%; position:relative; background:#221F1C;">
+          <div style="position:absolute; inset:0; background:repeating-linear-gradient(0deg, #221F1C 0 24px, #262320 24px 48px), repeating-linear-gradient(90deg, #221F1C 0 24px, #262320 24px 48px);"></div>
+          <div style="position:absolute; top:64px; left:20px; display:flex; align-items:center; gap:6px; background:#0E0D0C; padding:6px 12px; border-radius:3px;">
+            <div style="width:7px; height:7px; border-radius:50%; background:#8E2430;"></div>
+            <div style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:#F2EFEA;">RECORDING</div>
+          </div>
+          <div style="position:absolute; left:0; right:0; bottom:0; background:#161514; padding:40px 20px 28px; display:flex; flex-direction:column; align-items:center; gap:18px;">
+            <div style="display:flex; width:100%; justify-content:space-between; padding:0 10px;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                <div style="font-size:22px; font-weight:800; color:#F2EFEA;">86</div>
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">km/h</div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                <div style="font-size:22px; font-weight:800; color:#F2EFEA;">42.3</div>
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">km</div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                <div style="font-size:22px; font-weight:800; color:#F2EFEA;">28:14</div>
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">time</div>
+              </div>
+            </div>
+            <div style="width:64px; height:64px; border-radius:50%; background:#8E2430; display:flex; align-items:center; justify-content:center;">
+              <div style="width:20px; height:20px; border-radius:2px; background:#F2EFEA;"></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- Screen 4: Profile -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:2px; color:#5C5750; text-transform:uppercase;">04 &mdash; Profile</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 360 }}" height="{{ 780 }}" style="width:360px; height:780px; flex-shrink:0;" hint-size="360px,780px">
+        <div style="height:100%; overflow:auto; background:#1A1A1A;">
+          <div style="height:120px; background:#8E2430; margin-top:60px;"></div>
+          <div style="display:flex; flex-direction:column; align-items:center; margin-top:-44px; gap:10px; padding:0 22px 22px;">
+            <div style="width:84px; height:84px; border-radius:50%; background:#3A3733; border:4px solid #1A1A1A;"></div>
+            <div style="font-size:16px; font-weight:700; color:#F2EFEA;">Marco Renard</div>
+            <div style="font-size:11px; color:#5C5750; letter-spacing:0.3px;">Track club member since 2021</div>
+            <div style="display:flex; width:100%; justify-content:space-between; margin-top:12px; padding:14px 4px; border-top:1px solid #2A2825; border-bottom:1px solid #2A2825;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><div style="font-size:17px; font-weight:800; color:#F2EFEA;">312</div><div style="font-size:9px; color:#5C5750; text-transform:uppercase; letter-spacing:0.8px;">rides</div></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><div style="font-size:17px; font-weight:800; color:#F2EFEA;">9,841</div><div style="font-size:9px; color:#5C5750; text-transform:uppercase; letter-spacing:0.8px;">km</div></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><div style="font-size:17px; font-weight:800; color:#F2EFEA;">61k</div><div style="font-size:9px; color:#5C5750; text-transform:uppercase; letter-spacing:0.8px;">elev m</div></div>
+            </div>
+            <div style="width:100%; display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+              <div style="font-size:10px; letter-spacing:1.2px; color:#5C5750; font-weight:700; text-transform:uppercase; align-self:flex-start;">Badges</div>
+              <div style="display:flex; gap:10px;">
+                <div style="width:38px; height:38px; border-radius:50%; background:#2A2825; box-shadow:inset 0 0 0 1px #8E2430;"></div>
+                <div style="width:38px; height:38px; border-radius:50%; background:#2A2825; box-shadow:inset 0 0 0 1px #3A3733;"></div>
+                <div style="width:38px; height:38px; border-radius:50%; background:#2A2825; box-shadow:inset 0 0 0 1px #3A3733;"></div>
+                <div style="width:38px; height:38px; border-radius:50%; background:#2A2825; box-shadow:inset 0 0 0 1px #3A3733;"></div>
+              </div>
+              <div style="font-size:10px; letter-spacing:1.2px; color:#5C5750; font-weight:700; text-transform:uppercase; align-self:flex-start; margin-top:6px;">Vehicles</div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:26px; border-radius:3px; background:#2A2825;"></div>
+                <div style="font-size:12px; font-weight:600; color:#B3ABA2;">Porsche 911 GT3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- Screen 5: Ride Summary -->
+    <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:2px; color:#5C5750; text-transform:uppercase;">05 &mdash; Ride Summary</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 360 }}" height="{{ 780 }}" style="width:360px; height:780px; flex-shrink:0;" hint-size="360px,780px">
+        <div style="height:100%; overflow:auto; background:#1A1A1A;">
+          <div style="height:200px; margin-top:60px; background:#2A2825;"></div>
+          <div style="padding:16px 22px 22px; display:flex; flex-direction:column; gap:18px;">
+            <div style="text-align:center;">
+              <div style="font-size:18px; font-weight:700; color:#F2EFEA;">Ride Complete</div>
+              <div style="font-size:11px; color:#5C5750; margin-top:3px;">Sunday Loop &middot; 2:14 PM</div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div style="background:#221F1C; border-radius:4px; padding:14px; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">Distance</div>
+                <div style="font-size:19px; font-weight:800; color:#F2EFEA;">64.2 km</div>
+              </div>
+              <div style="background:#221F1C; border-radius:4px; padding:14px; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">Duration</div>
+                <div style="font-size:19px; font-weight:800; color:#F2EFEA;">1h 42m</div>
+              </div>
+              <div style="background:#221F1C; border-radius:4px; padding:14px; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">Avg speed</div>
+                <div style="font-size:19px; font-weight:800; color:#F2EFEA;">37 km/h</div>
+              </div>
+              <div style="background:#221F1C; border-radius:4px; padding:14px; display:flex; flex-direction:column; gap:4px;">
+                <div style="font-size:9px; letter-spacing:1px; color:#5C5750; text-transform:uppercase;">Elevation</div>
+                <div style="font-size:19px; font-weight:800; color:#F2EFEA;">1,120 m</div>
+              </div>
+            </div>
+            <div style="background:#8E2430; border-radius:4px; text-align:center; padding:16px; font-size:13px; font-weight:700; color:#F2EFEA; letter-spacing:0.5px;">Save Ride</div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px; padding-top:24px; border-top:1px solid #2A2825;">
+    <div style="font-size:11px; font-weight:700; letter-spacing:1.5px; color:#5C5750; text-transform:uppercase;">Style reference</div>
+    <div style="display:flex; gap:24px; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:4px; background:#1A1A1A; box-shadow:inset 0 0 0 1px #3A3733;"></div><div style="font-size:12px; color:#B3ABA2;">#1A1A1A base</div></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:4px; background:#F2EFEA;"></div><div style="font-size:12px; color:#B3ABA2;">#F2EFEA off-white</div></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:4px; background:#8E2430;"></div><div style="font-size:12px; color:#B3ABA2;">#8E2430 accent</div></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:4px; background:#5C5750;"></div><div style="font-size:12px; color:#B3ABA2;">#5C5750 gray dark</div></div>
+      <div style="display:flex; align-items:center; gap:8px;"><div style="width:28px; height:28px; border-radius:4px; background:#B3ABA2;"></div><div style="font-size:12px; color:#B3ABA2;">#B3ABA2 gray light</div></div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}"></script>
+</body>
+</html>
