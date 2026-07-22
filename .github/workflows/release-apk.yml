@@ -1,7 +1,8 @@
-# Builds a release APK and attaches it to a GitHub Release whenever a
-# vX.Y.Z tag is pushed (e.g. `git tag v0.1.0 && git push origin v0.1.0`).
-# Can also be run manually from the Actions tab (workflow_dispatch) - in
-# that case the APK is uploaded as a build artifact instead of a release.
+# Builds a release APK and attaches it to a GitHub Release: either
+# automatically on a vX.Y.Z tag push, or on-demand via workflow_dispatch
+# (Actions tab -> Release APK -> Run workflow), which creates the tag too -
+# handy since tag pushes from outside GitHub's own infrastructure can be
+# blocked by branch/tag protection rules.
 #
 # Signing: the app's default Flutter scaffold signs release builds with the
 # debug keystore (see android/app/build.gradle.kts), so this produces a
@@ -15,6 +16,10 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to create and release, e.g. v0.1.0"
+        required: true
 
 jobs:
   build-and-release:
@@ -47,23 +52,24 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Rename APK
         run: |
           mkdir -p ../dist
-          version="${GITHUB_REF_NAME:-manual-$(date +%Y%m%d%H%M%S)}"
-          cp build/app/outputs/flutter-apk/app-release.apk "../dist/redl-${version}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "../dist/redl-${{ steps.version.outputs.tag }}.apk"
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
           files: dist/redl-*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload build artifact
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: redl-apk
-          path: dist/redl-*.apk
