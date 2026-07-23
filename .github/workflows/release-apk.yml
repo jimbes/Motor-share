@@ -4,11 +4,13 @@
 # handy since tag pushes from outside GitHub's own infrastructure can be
 # blocked by branch/tag protection rules.
 #
-# Signing: the app's default Flutter scaffold signs release builds with the
-# debug keystore (see android/app/build.gradle.kts), so this produces a
-# sideloadable APK with no keystore secrets required. That's fine for
-# POC/internal distribution; a real Play Store release would need a proper
-# upload keystore configured as CI secrets.
+# Signing: release builds use a fixed, checked-in keystore
+# (android/redl-release.keystore, referenced from build.gradle.kts) rather
+# than the platform's default debug keystore, which GitHub Actions
+# regenerates randomly on every fresh runner - without a fixed key, each
+# release would be signed differently and Android would refuse to install
+# it as an update over the previous one. This is a sideloadable POC key,
+# not a production Play Store upload key.
 #
 # API URL: baked in at build time via --dart-define (see PROD_API_URL below)
 # - release builds always point at the production backend, not the
@@ -61,17 +63,23 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Build release APK
-        run: flutter build apk --release --dart-define=API_BASE_URL=${{ env.PROD_API_URL }}
-
       - name: Determine version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            tag="${{ github.event.inputs.version }}"
           else
-            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            tag="${GITHUB_REF_NAME}"
           fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "name=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --dart-define=API_BASE_URL=${{ env.PROD_API_URL }} \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ github.run_number }}
 
       - name: Rename APK
         run: |

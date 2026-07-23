@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.redl.app"
+    namespace = "com.besse.redl"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +20,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.redl.app"
+        applicationId = "com.besse.redl"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -30,11 +29,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("redlRelease") {
+            // A fixed, checked-in keystore (not a production/Play-Store key)
+            // so every CI build - each running on a fresh, otherwise-random
+            // debug keystore - is signed identically. Without this, each
+            // GitHub Actions run signs with a different auto-generated
+            // debug key and Android refuses to install the "update" over
+            // the previous release.
+            storeFile = file("../redl-release.keystore")
+            storePassword = "redl-poc-signing"
+            keyAlias = "redl"
+            keyPassword = "redl-poc-signing"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("redlRelease")
         }
     }
 }

@@ -12,3 +12,10 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Exception: redl-release.keystore is an intentionally shared, non-production
+# signing key (see build.gradle.kts) - checked in so every CI build signs
+# release APKs identically, letting users install updates in place instead
+# of Android refusing them over a signature mismatch. Never use this
+# keystore for a real Play Store release.
+!redl-release.keystore

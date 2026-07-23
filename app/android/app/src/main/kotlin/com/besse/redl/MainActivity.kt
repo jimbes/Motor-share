@@ -1,4 +1,4 @@
-package com.redl.app
+package com.besse.redl
 
 import io.flutter.embedding.android.FlutterActivity
 
