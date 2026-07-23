@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/format.dart';
+import '../core/speed_color.dart';
 import '../state/recording_controller.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -84,17 +85,11 @@ class _RecordScreenState extends State<RecordScreen> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.redl.app',
+                  userAgentPackageName: 'com.besse.redl',
                 ),
                 if (_controller.track.length > 1)
                   PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _controller.track.map((p) => LatLng(p.lat, p.lng)).toList(),
-                        color: RedlColors.accent,
-                        strokeWidth: 4,
-                      ),
-                    ],
+                    polylines: speedColoredSegments(_controller.track, _controller.avgSpeedKmh, strokeWidth: 4),
                   ),
               ],
             ),

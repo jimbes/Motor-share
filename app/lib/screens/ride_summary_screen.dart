@@ -241,7 +241,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(RedlRadius.sm),
-                child: SizedBox(height: 200, child: RoutePreviewMap(points: widget.track!)),
+                child: SizedBox(height: 200, child: RoutePreviewMap(points: widget.track!, avgSpeedKmh: widget.avgSpeedKmh!)),
               ),
               const SizedBox(height: 20),
               _StatGrid(
@@ -344,7 +344,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(RedlRadius.sm),
-                child: SizedBox(height: 220, child: RoutePreviewMap(points: ride.routeLine, interactive: true)),
+                child: SizedBox(height: 220, child: RoutePreviewMap(points: ride.routeLine, interactive: true, avgSpeedKmh: ride.avgSpeedKmh)),
               ),
               const SizedBox(height: 20),
               _StatGrid(

@@ -3,16 +3,19 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/models/track_point.dart';
+import '../core/speed_color.dart';
 import '../theme/redl_colors.dart';
 
 /// A small, non-interactive OpenStreetMap preview of a ride's route -
 /// used on feed cards and ride summaries in place of the mockup's flat
-/// placeholder thumbnail.
+/// placeholder thumbnail. Colored by speed relative to [avgSpeedKmh] when
+/// available (red below average, green above, gradient in between).
 class RoutePreviewMap extends StatelessWidget {
-  const RoutePreviewMap({super.key, required this.points, this.interactive = false});
+  const RoutePreviewMap({super.key, required this.points, this.interactive = false, this.avgSpeedKmh = 0});
 
   final List<TrackPoint> points;
   final bool interactive;
+  final double avgSpeedKmh;
 
   @override
   Widget build(BuildContext context) {
@@ -35,13 +38,9 @@ class RoutePreviewMap extends StatelessWidget {
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.redl.app',
+            userAgentPackageName: 'com.besse.redl',
           ),
-          PolylineLayer(
-            polylines: [
-              Polyline(points: latLngs, color: RedlColors.accent, strokeWidth: 3),
-            ],
-          ),
+          PolylineLayer(polylines: speedColoredSegments(points, avgSpeedKmh)),
         ],
       ),
     );

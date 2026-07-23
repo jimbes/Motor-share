@@ -27,7 +27,7 @@ class RideCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 140, child: RoutePreviewMap(points: ride.routeLine)),
+            SizedBox(height: 140, child: RoutePreviewMap(points: ride.routeLine, avgSpeedKmh: ride.avgSpeedKmh)),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
