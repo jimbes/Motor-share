@@ -1,0 +1,128 @@
+{
+  "@@locale": "en",
+
+  "appName": "REDL",
+  "appTagline": "Track every apex.",
+
+  "actionCreateAccount": "Create Account",
+  "actionLogIn": "Log In",
+  "actionCancel": "Cancel",
+  "actionRemove": "Remove",
+  "actionSave": "Save",
+  "actionRetry": "Retry",
+
+  "fieldEmail": "Email",
+  "fieldEmailInvalid": "Enter a valid email",
+  "fieldPassword": "Password",
+  "fieldPasswordRequired": "Enter your password",
+  "fieldPasswordMinLength": "At least 8 characters",
+  "fieldName": "Name",
+  "fieldNameRequired": "Enter your name",
+
+  "loginTitle": "Welcome back.",
+  "loginSubtitle": "Log in to keep tracking your rides.",
+
+  "registerTitle": "Join REDL.",
+  "registerSubtitle": "Start tracking every ride.",
+
+  "feedGreeting": "Hey, {name}",
+  "@feedGreeting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "feedThisWeek": "THIS WEEK",
+  "feedRecentActivity": "RECENT ACTIVITY",
+  "feedEmpty": "No rides yet. Go record one!",
+  "feedLoadError": "Could not load the feed.",
+
+  "ridesCount": "{count, plural, =0{0 rides} =1{1 ride} other{{count} rides}}",
+  "@ridesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "likesCount": "{count, plural, =0{0 likes} =1{1 like} other{{count} likes}}",
+  "@likesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "commentsCount": "{count, plural, =0{0 comments} =1{1 comment} other{{count} comments}}",
+  "@commentsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "daysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "today": "Today",
+  "yesterday": "Yesterday",
+
+  "recordPermissionError": "Location permission is needed to record a ride.",
+  "recordStartRide": "Start Ride",
+  "recordingLabel": "RECORDING",
+  "pausedLabel": "PAUSED",
+  "statSpeed": "SPEED",
+  "statDistance": "DISTANCE",
+  "statTime": "TIME",
+  "statDuration": "DURATION",
+  "statAvgSpeed": "AVG SPEED",
+  "statElevation": "ELEVATION",
+  "actionPause": "Pause",
+  "actionResume": "Resume",
+
+  "rideCompleteTitle": "Ride Complete",
+  "defaultRideTitle": "Morning Ride",
+  "fieldTitle": "Title",
+  "fieldDescriptionOptional": "Description (optional)",
+  "fieldBikeOptional": "Bike (optional)",
+  "bikeNone": "None",
+  "photosLabel": "PHOTOS",
+  "rideTitleRequired": "Give your ride a title.",
+  "actionSaveRide": "Save Ride",
+
+  "rideNotFound": "Ride not found.",
+  "rideLoadError": "Could not load this ride.",
+  "commentsLabel": "COMMENTS",
+  "addCommentHint": "Add a comment...",
+
+  "garageTitle": "Garage",
+  "removeBikeTitle": "Remove {name}?",
+  "@removeBikeTitle": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "removeBikeContent": "This will not delete rides already logged with this bike.",
+  "noBikesYet": "No bikes yet.",
+  "addFirstBike": "Add your first bike",
+
+  "logOut": "Log out",
+  "riderSince": "Rider since {year}",
+  "@riderSince": {
+    "placeholders": {
+      "year": {"type": "String"}
+    }
+  },
+  "statRides": "RIDES",
+  "vehiclesLabel": "VEHICLES",
+  "addBikeToGarage": "Add a bike to your garage",
+  "languageLabel": "Language",
+
+  "editBikeTitle": "Edit Bike",
+  "addBikeTitle": "Add Bike",
+  "fieldBrand": "Brand",
+  "fieldModel": "Model",
+  "fieldNicknameOptional": "Nickname (optional)",
+  "fieldYear": "Year",
+  "fieldEngineCc": "Engine (cc)",
+  "bikeBrandModelRequired": "Brand and model are required.",
+
+  "apiErrorNetwork": "Could not reach the server. Check your connection and API URL.",
+  "apiErrorGeneric": "Something went wrong. Please try again."
+}

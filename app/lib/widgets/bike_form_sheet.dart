@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/api_client.dart';
 import '../core/models/bike.dart';
 import '../core/repositories/bike_repository.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
@@ -51,7 +52,7 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
 
   Future<void> _save() async {
     if (_brandController.text.trim().isEmpty || _modelController.text.trim().isEmpty) {
-      setState(() => _error = 'Brand and model are required.');
+      setState(() => _error = AppLocalizations.of(context)!.bikeBrandModelRequired);
       return;
     }
 
@@ -74,7 +75,7 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
       final saved = widget.existing != null ? await repo.update(widget.existing!.id, bike) : await repo.create(bike);
       if (mounted) Navigator.of(context).pop(saved);
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e));
+      if (mounted) setState(() => _error = apiErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -82,6 +83,7 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(
         left: RedlSpacing.screenPadding,
@@ -93,13 +95,13 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.existing != null ? 'Edit Bike' : 'Add Bike', style: RedlText.title(fontSize: 16)),
+            Text(widget.existing != null ? l10n.editBikeTitle : l10n.addBikeTitle, style: RedlText.title(fontSize: 16)),
             const SizedBox(height: 20),
-            TextField(controller: _brandController, style: RedlText.body(), decoration: const InputDecoration(labelText: 'Brand')),
+            TextField(controller: _brandController, style: RedlText.body(), decoration: InputDecoration(labelText: l10n.fieldBrand)),
             const SizedBox(height: 14),
-            TextField(controller: _modelController, style: RedlText.body(), decoration: const InputDecoration(labelText: 'Model')),
+            TextField(controller: _modelController, style: RedlText.body(), decoration: InputDecoration(labelText: l10n.fieldModel)),
             const SizedBox(height: 14),
-            TextField(controller: _nicknameController, style: RedlText.body(), decoration: const InputDecoration(labelText: 'Nickname (optional)')),
+            TextField(controller: _nicknameController, style: RedlText.body(), decoration: InputDecoration(labelText: l10n.fieldNicknameOptional)),
             const SizedBox(height: 14),
             Row(
               children: [
@@ -108,7 +110,7 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
                     controller: _yearController,
                     style: RedlText.body(),
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Year'),
+                    decoration: InputDecoration(labelText: l10n.fieldYear),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -117,7 +119,7 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
                     controller: _ccController,
                     style: RedlText.body(),
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Engine (cc)'),
+                    decoration: InputDecoration(labelText: l10n.fieldEngineCc),
                   ),
                 ),
               ],
@@ -127,7 +129,7 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
               Text(_error!, style: RedlText.body(fontSize: 13, color: RedlColors.accentTint)),
             ],
             const SizedBox(height: 20),
-            RedlPrimaryButton(label: 'Save', onPressed: _save, loading: _saving),
+            RedlPrimaryButton(label: l10n.actionSave, onPressed: _save, loading: _saving),
           ],
         ),
       ),

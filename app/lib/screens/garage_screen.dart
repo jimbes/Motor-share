@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/models/bike.dart';
 import '../core/repositories/bike_repository.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
@@ -46,15 +47,16 @@ class _GarageScreenState extends State<GarageScreen> {
   }
 
   Future<void> _deleteBike(Bike bike) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: RedlColors.surface2,
-        title: Text('Remove ${bike.displayName}?', style: RedlText.title(fontSize: 15)),
-        content: Text('This will not delete rides already logged with this bike.', style: RedlText.body(fontSize: 13)),
+        title: Text(l10n.removeBikeTitle(bike.displayName), style: RedlText.title(fontSize: 15)),
+        content: Text(l10n.removeBikeContent, style: RedlText.body(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Remove')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.actionCancel)),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(l10n.actionRemove)),
         ],
       ),
     );
@@ -70,9 +72,10 @@ class _GarageScreenState extends State<GarageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Garage'),
+        title: Text(l10n.garageTitle),
         actions: [IconButton(onPressed: _addBike, icon: const Icon(Icons.add))],
       ),
       body: SafeArea(
@@ -87,9 +90,9 @@ class _GarageScreenState extends State<GarageScreen> {
                           Center(
                             child: Column(
                               children: [
-                                Text('No bikes yet.', style: RedlText.body(color: RedlColors.textSecondary)),
+                                Text(l10n.noBikesYet, style: RedlText.body(color: RedlColors.textSecondary)),
                                 const SizedBox(height: 12),
-                                TextButton(onPressed: _addBike, child: const Text('Add your first bike')),
+                                TextButton(onPressed: _addBike, child: Text(l10n.addFirstBike)),
                               ],
                             ),
                           ),

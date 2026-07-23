@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api_client.dart';
@@ -7,9 +8,11 @@ import 'core/repositories/bike_repository.dart';
 import 'core/repositories/ride_repository.dart';
 import 'core/route_observer.dart';
 import 'core/token_storage.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/home_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'state/auth_provider.dart';
+import 'state/locale_provider.dart';
 import 'theme/redl_colors.dart';
 import 'theme/redl_theme.dart';
 
@@ -32,14 +35,27 @@ class RedlApp extends StatelessWidget {
           create: (_) => AuthProvider(apiClient: apiClient, authRepository: authRepository, tokenStorage: tokenStorage)
             ..restore(),
         ),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()..restore()),
       ],
-      child: MaterialApp(
-        title: 'REDL',
-        debugShowCheckedModeBanner: false,
-        theme: RedlTheme.dark,
-        darkTheme: RedlTheme.dark,
-        navigatorObservers: [appRouteObserver],
-        home: const _AuthGate(),
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) {
+          return MaterialApp(
+            title: 'REDL',
+            debugShowCheckedModeBanner: false,
+            theme: RedlTheme.dark,
+            darkTheme: RedlTheme.dark,
+            navigatorObservers: [appRouteObserver],
+            locale: localeProvider.locale,
+            supportedLocales: LocaleProvider.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const _AuthGate(),
+          );
+        },
       ),
     );
   }

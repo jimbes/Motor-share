@@ -5,6 +5,7 @@ import '../core/models/ride.dart';
 import '../core/models/rider_stats.dart';
 import '../core/repositories/ride_repository.dart';
 import '../core/route_observer.dart';
+import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -84,7 +85,7 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
         _stats = stats;
       });
     } catch (_) {
-      setState(() => _error = 'Could not load the feed.');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.feedLoadError);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -130,6 +131,7 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = context.watch<AuthProvider>().user;
     final stats = _stats;
 
@@ -152,7 +154,7 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
                             const CircleAvatar(radius: 16, backgroundColor: RedlColors.surface4),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text('Hey, ${user?.name.split(' ').first ?? ''}', style: RedlText.title(fontSize: 14)),
+                              child: Text(l10n.feedGreeting(user?.name.split(' ').first ?? ''), style: RedlText.title(fontSize: 14)),
                             ),
                             const CircleAvatar(radius: 16, backgroundColor: RedlColors.surface4, child: Icon(Icons.settings_outlined, size: 16, color: RedlColors.baseAlt)),
                           ],
@@ -165,22 +167,22 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('THIS WEEK', style: RedlText.eyebrow(fontSize: 10, color: RedlColors.accentTint)),
+                              Text(l10n.feedThisWeek, style: RedlText.eyebrow(fontSize: 10, color: RedlColors.accentTint)),
                               const SizedBox(height: 6),
                               Text('${(stats?.weekDistanceKm ?? 0).toStringAsFixed(0)} km', style: RedlText.statValue(fontSize: 30)),
                               const SizedBox(height: 4),
-                              Text('${stats?.weekRidesCount ?? 0} rides', style: RedlText.body(fontSize: 11, color: RedlColors.accentTint)),
+                              Text(l10n.ridesCount(stats?.weekRidesCount ?? 0), style: RedlText.body(fontSize: 11, color: RedlColors.accentTint)),
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Text('RECENT ACTIVITY', style: RedlText.eyebrow()),
+                        Text(l10n.feedRecentActivity, style: RedlText.eyebrow()),
                         const SizedBox(height: 12),
                         if (_rides.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 40),
                             child: Center(
-                              child: Text('No rides yet. Go record one!', style: RedlText.meta(color: RedlColors.textSecondary)),
+                              child: Text(l10n.feedEmpty, style: RedlText.meta(color: RedlColors.textSecondary)),
                             ),
                           )
                         else
@@ -221,7 +223,7 @@ class _ErrorState extends StatelessWidget {
         children: [
           Text(message, style: RedlText.body(color: RedlColors.textSecondary)),
           const SizedBox(height: 12),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(AppLocalizations.of(context)!.actionRetry)),
         ],
       ),
     );

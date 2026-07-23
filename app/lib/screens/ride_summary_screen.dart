@@ -12,6 +12,7 @@ import '../core/models/ride_comment.dart';
 import '../core/models/track_point.dart';
 import '../core/repositories/bike_repository.dart';
 import '../core/repositories/ride_repository.dart';
+import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -57,7 +58,8 @@ class RideSummaryScreen extends StatefulWidget {
 
 class _RideSummaryScreenState extends State<RideSummaryScreen> {
   // Save mode.
-  final _titleController = TextEditingController(text: 'Morning Ride');
+  final _titleController = TextEditingController();
+  bool _defaultTitleSet = false;
   final _descriptionController = TextEditingController();
   List<Bike> _bikes = [];
   Bike? _selectedBike;
@@ -81,6 +83,15 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       _loadBikes();
     } else {
       _loadRide();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_defaultTitleSet && _isSaveMode) {
+      _titleController.text = AppLocalizations.of(context)!.defaultRideTitle;
+      _defaultTitleSet = true;
     }
   }
 
@@ -110,7 +121,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       final ride = await context.read<RideRepository>().show(widget.rideId!);
       if (mounted) setState(() => _ride = ride);
     } catch (_) {
-      if (mounted) setState(() => _loadError = 'Could not load this ride.');
+      if (mounted) setState(() => _loadError = AppLocalizations.of(context)!.rideLoadError);
     } finally {
       if (mounted) setState(() => _loadingRide = false);
     }
@@ -123,7 +134,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) {
-      setState(() => _saveError = 'Give your ride a title.');
+      setState(() => _saveError = AppLocalizations.of(context)!.rideTitleRequired);
       return;
     }
     setState(() {
@@ -151,7 +162,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
-      setState(() => _saveError = apiErrorMessage(e));
+      if (mounted) setState(() => _saveError = apiErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -229,10 +240,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   }
 
   Widget _buildSaveMode(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final elevation = _elevationGainMeters(widget.track!);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ride Complete')),
+      appBar: AppBar(title: Text(l10n.rideCompleteTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(RedlSpacing.screenPadding, 16, RedlSpacing.screenPadding, 32),
@@ -255,14 +267,14 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               TextField(
                 controller: _titleController,
                 style: RedlText.body(),
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: l10n.fieldTitle),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _descriptionController,
                 style: RedlText.body(),
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description (optional)'),
+                decoration: InputDecoration(labelText: l10n.fieldDescriptionOptional),
               ),
               const SizedBox(height: 16),
               if (_bikes.isNotEmpty)
@@ -270,15 +282,15 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   initialValue: _selectedBike,
                   dropdownColor: RedlColors.surface2,
                   style: RedlText.body(),
-                  decoration: const InputDecoration(labelText: 'Bike (optional)'),
+                  decoration: InputDecoration(labelText: l10n.fieldBikeOptional),
                   items: [
-                    const DropdownMenuItem<Bike?>(value: null, child: Text('None')),
+                    DropdownMenuItem<Bike?>(value: null, child: Text(l10n.bikeNone)),
                     ..._bikes.map((b) => DropdownMenuItem<Bike?>(value: b, child: Text(b.displayName))),
                   ],
                   onChanged: (value) => setState(() => _selectedBike = value),
                 ),
               const SizedBox(height: 20),
-              Text('PHOTOS', style: RedlText.eyebrow()),
+              Text(l10n.photosLabel, style: RedlText.eyebrow()),
               const SizedBox(height: 10),
               SizedBox(
                 height: 72,
@@ -309,7 +321,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                 Text(_saveError!, style: RedlText.body(fontSize: 13, color: RedlColors.accentTint)),
               ],
               const SizedBox(height: 24),
-              RedlPrimaryButton(label: 'Save Ride', onPressed: _save, loading: _saving),
+              RedlPrimaryButton(label: l10n.actionSaveRide, onPressed: _save, loading: _saving),
             ],
           ),
         ),
@@ -318,13 +330,14 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   }
 
   Widget _buildViewMode(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loadingRide) {
       return const Scaffold(body: Center(child: CircularProgressIndicator(color: RedlColors.accent)));
     }
     if (_loadError != null || _ride == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text(_loadError ?? 'Ride not found.', style: RedlText.body(color: RedlColors.textSecondary))),
+        body: Center(child: Text(_loadError ?? l10n.rideNotFound, style: RedlText.body(color: RedlColors.textSecondary))),
       );
     }
 
@@ -340,7 +353,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('${ride.user.name} · ${formatRelativeDate(ride.startedAt)}', style: RedlText.meta()),
+              Text('${ride.user.name} · ${formatRelativeDate(context, ride.startedAt)}', style: RedlText.meta()),
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(RedlRadius.sm),
@@ -397,18 +410,18 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                           color: ride.likedByMe ? RedlColors.accent : RedlColors.textMuted,
                         ),
                         const SizedBox(width: 6),
-                        Text('${ride.likesCount} likes', style: RedlText.body(fontSize: 13)),
+                        Text(l10n.likesCount(ride.likesCount), style: RedlText.body(fontSize: 13)),
                       ],
                     ),
                   ),
                   const SizedBox(width: 24),
                   Icon(Icons.chat_bubble_outline, size: 18, color: RedlColors.textMuted),
                   const SizedBox(width: 6),
-                  Text('${ride.commentsCount} comments', style: RedlText.body(fontSize: 13)),
+                  Text(l10n.commentsCount(ride.commentsCount), style: RedlText.body(fontSize: 13)),
                 ],
               ),
               const Divider(height: 32),
-              Text('COMMENTS', style: RedlText.eyebrow()),
+              Text(l10n.commentsLabel, style: RedlText.eyebrow()),
               const SizedBox(height: 12),
               ...?ride.comments?.map((comment) => Padding(
                     padding: const EdgeInsets.only(bottom: 14),
@@ -442,7 +455,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                     child: TextField(
                       controller: _commentController,
                       style: RedlText.body(fontSize: 13),
-                      decoration: const InputDecoration(hintText: 'Add a comment...'),
+                      decoration: InputDecoration(hintText: l10n.addCommentHint),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -476,11 +489,12 @@ class _StatGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cells = [
-      ('DISTANCE', formatDistanceKm(distanceMeters / 1000)),
-      ('DURATION', formatDuration(Duration(seconds: durationSeconds))),
-      ('AVG SPEED', formatSpeedKmh(avgSpeedKmh)),
-      ('ELEVATION', '${elevationMeters.round()} m'),
+      (l10n.statDistance, formatDistanceKm(distanceMeters / 1000)),
+      (l10n.statDuration, formatDuration(Duration(seconds: durationSeconds))),
+      (l10n.statAvgSpeed, formatSpeedKmh(avgSpeedKmh)),
+      (l10n.statElevation, '${elevationMeters.round()} m'),
     ];
 
     return GridView.count(

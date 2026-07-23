@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show TextInput;
 import 'package:provider/provider.dart';
 
 import '../core/api_client.dart';
+import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -47,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       TextInput.finishAutofillContext();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e));
+      if (mounted) setState(() => _error = apiErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -55,8 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Log In')),
+      appBar: AppBar(title: Text(l10n.actionLogIn)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: RedlSpacing.screenPadding, vertical: 24),
@@ -65,9 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Welcome back.', style: RedlText.title(fontSize: 20)),
+                Text(l10n.loginTitle, style: RedlText.title(fontSize: 20)),
                 const SizedBox(height: 4),
-                Text('Log in to keep tracking your rides.', style: RedlText.meta(color: RedlColors.textSecondary)),
+                Text(l10n.loginSubtitle, style: RedlText.meta(color: RedlColors.textSecondary)),
                 const SizedBox(height: 32),
                 AutofillGroup(
                   child: Column(
@@ -79,8 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.email, AutofillHints.username],
-                        decoration: const InputDecoration(labelText: 'Email'),
-                        validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
+                        decoration: InputDecoration(labelText: l10n.fieldEmail),
+                        validator: (value) => (value == null || !value.contains('@')) ? l10n.fieldEmailInvalid : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -89,8 +91,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.password],
-                        decoration: const InputDecoration(labelText: 'Password'),
-                        validator: (value) => (value == null || value.isEmpty) ? 'Enter your password' : null,
+                        decoration: InputDecoration(labelText: l10n.fieldPassword),
+                        validator: (value) => (value == null || value.isEmpty) ? l10n.fieldPasswordRequired : null,
                         onFieldSubmitted: (_) => _submit(),
                       ),
                     ],
@@ -101,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(_error!, style: RedlText.body(fontSize: 13, color: RedlColors.accentTint)),
                 ],
                 const SizedBox(height: 24),
-                RedlPrimaryButton(label: 'Log In', onPressed: _submit, loading: _loading),
+                RedlPrimaryButton(label: l10n.actionLogIn, onPressed: _submit, loading: _loading),
               ],
             ),
           ),

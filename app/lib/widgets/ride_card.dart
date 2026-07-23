@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/models/ride.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
@@ -16,6 +17,7 @@ class RideCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -36,17 +38,17 @@ class RideCard extends StatelessWidget {
                   Text(ride.title, style: RedlText.title(fontSize: 13)),
                   const SizedBox(height: 4),
                   Text(
-                    '${ride.user.name} · ${formatRelativeDate(ride.startedAt)}',
+                    '${ride.user.name} · ${formatRelativeDate(context, ride.startedAt)}',
                     style: RedlText.meta(fontSize: 10.5),
                   ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _Stat(label: 'DISTANCE', value: formatDistanceKm(ride.distanceKm)),
+                      _Stat(label: l10n.statDistance, value: formatDistanceKm(ride.distanceKm)),
                       const SizedBox(width: 20),
-                      _Stat(label: 'DURATION', value: formatDuration(ride.duration)),
+                      _Stat(label: l10n.statDuration, value: formatDuration(ride.duration)),
                       const SizedBox(width: 20),
-                      _Stat(label: 'AVG SPEED', value: formatSpeedKmh(ride.avgSpeedKmh)),
+                      _Stat(label: l10n.statAvgSpeed, value: formatSpeedKmh(ride.avgSpeedKmh)),
                     ],
                   ),
                   const SizedBox(height: 12),

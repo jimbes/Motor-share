@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redl/core/format.dart';
+import 'package:redl/l10n/app_localizations.dart';
 
 void main() {
   group('formatDistanceKm', () {
@@ -34,14 +36,41 @@ void main() {
   });
 
   group('formatRelativeDate', () {
-    test('labels today', () {
-      expect(formatRelativeDate(DateTime.now()), 'Today');
+    testWidgets('labels today', (tester) async {
+      late BuildContext capturedContext;
+      await tester.pumpWidget(_LocalizedHarness(onBuild: (context) => capturedContext = context));
+
+      expect(formatRelativeDate(capturedContext, DateTime.now()), 'Today');
     });
 
-    test('labels a date a week+ ago with month/day/year', () {
+    testWidgets('labels a date a week+ ago with month/day/year', (tester) async {
+      late BuildContext capturedContext;
+      await tester.pumpWidget(_LocalizedHarness(onBuild: (context) => capturedContext = context));
+
       final tenDaysAgo = DateTime.now().subtract(const Duration(days: 10));
-      final result = formatRelativeDate(tenDaysAgo);
+      final result = formatRelativeDate(capturedContext, tenDaysAgo);
       expect(result, contains(tenDaysAgo.year.toString()));
     });
   });
+}
+
+class _LocalizedHarness extends StatelessWidget {
+  const _LocalizedHarness({required this.onBuild});
+
+  final void Function(BuildContext context) onBuild;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) {
+          onBuild(context);
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
 }

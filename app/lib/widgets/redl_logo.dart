@@ -1,5 +1,6 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_text_styles.dart';
 
@@ -28,15 +29,16 @@ class RedlLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         RedlMark(size: markSize),
         const SizedBox(height: 16),
-        Text('REDL', style: RedlText.wordmark(fontSize: wordmarkSize)),
+        Text(l10n.appName, style: RedlText.wordmark(fontSize: wordmarkSize)),
         if (showTagline) ...[
           const SizedBox(height: 8),
-          Text('Track every apex.', style: RedlText.body(fontSize: 15, color: RedlColors.textSecondary)),
+          Text(l10n.appTagline, style: RedlText.body(fontSize: 15, color: RedlColors.textSecondary)),
         ],
       ],
     );

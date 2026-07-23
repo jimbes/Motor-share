@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../core/format.dart';
 import '../core/speed_color.dart';
+import '../l10n/app_localizations.dart';
 import '../state/recording_controller.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -48,7 +49,7 @@ class _RecordScreenState extends State<RecordScreen> {
   Future<void> _start() async {
     final ok = await _controller.start();
     if (!ok && mounted) {
-      setState(() => _permissionError = 'Location permission is needed to record a ride.');
+      setState(() => _permissionError = AppLocalizations.of(context)!.recordPermissionError);
     }
   }
 
@@ -72,6 +73,7 @@ class _RecordScreenState extends State<RecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isIdle = _controller.state == RecordingState.idle;
     final isPaused = _controller.state == RecordingState.paused;
 
@@ -125,7 +127,7 @@ class _RecordScreenState extends State<RecordScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Start Ride', style: RedlText.title(fontSize: 13)),
+                  Text(l10n.recordStartRide, style: RedlText.title(fontSize: 13)),
                 ],
               ),
             ),
@@ -153,6 +155,7 @@ class _RecordingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(color: RedlColors.surface0, borderRadius: BorderRadius.circular(RedlRadius.sm)),
@@ -165,7 +168,7 @@ class _RecordingPill extends StatelessWidget {
             decoration: BoxDecoration(color: paused ? RedlColors.textMuted : RedlColors.accent, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(paused ? 'PAUSED' : 'RECORDING', style: RedlText.eyebrow(fontSize: 10, color: RedlColors.baseAlt)),
+          Text(paused ? l10n.pausedLabel : l10n.recordingLabel, style: RedlText.eyebrow(fontSize: 10, color: RedlColors.baseAlt)),
         ],
       ),
     );
@@ -181,6 +184,7 @@ class _StatSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isPaused = controller.state == RecordingState.paused;
 
     return Container(
@@ -195,16 +199,16 @@ class _StatSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _StatColumn(label: 'SPEED', value: formatSpeedKmh(controller.currentSpeedKmh)),
-              _StatColumn(label: 'DISTANCE', value: formatDistanceKm(controller.distanceMeters / 1000)),
-              _StatColumn(label: 'TIME', value: formatDuration(controller.elapsed)),
+              _StatColumn(label: l10n.statSpeed, value: formatSpeedKmh(controller.currentSpeedKmh)),
+              _StatColumn(label: l10n.statDistance, value: formatDistanceKm(controller.distanceMeters / 1000)),
+              _StatColumn(label: l10n.statTime, value: formatDuration(controller.elapsed)),
             ],
           ),
           const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(child: RedlSecondaryButton(label: isPaused ? 'Resume' : 'Pause', onPressed: onPauseResume)),
+              Expanded(child: RedlSecondaryButton(label: isPaused ? l10n.actionResume : l10n.actionPause, onPressed: onPauseResume)),
               const SizedBox(width: 12),
               GestureDetector(
                 onTap: onStop,

@@ -28,6 +28,11 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+
+# Generated from lib/l10n/*.arb by `flutter gen-l10n` (runs automatically
+# via `generate: true` in pubspec.yaml before analyze/test/build/run).
+lib/l10n/app_localizations.dart
+lib/l10n/app_localizations_*.dart
 .pub-cache/
 .pub/
 /build/

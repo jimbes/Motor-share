@@ -1,3 +1,8 @@
+import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
+
+import '../l10n/app_localizations.dart';
+
 String formatDistanceKm(double km) => '${km.toStringAsFixed(km < 10 ? 2 : 1)} km';
 
 String formatDuration(Duration d) {
@@ -15,18 +20,15 @@ String formatDuration(Duration d) {
 
 String formatSpeedKmh(double kmh) => '${kmh.toStringAsFixed(0)} km/h';
 
-String formatRelativeDate(DateTime dateTime) {
+String formatRelativeDate(BuildContext context, DateTime dateTime) {
+  final l10n = AppLocalizations.of(context)!;
   final now = DateTime.now();
   final local = dateTime.toLocal();
   final difference = now.difference(local);
 
-  if (difference.inDays == 0 && now.day == local.day) return 'Today';
-  if (difference.inDays == 1 || (difference.inDays == 0 && now.day != local.day)) return 'Yesterday';
-  if (difference.inDays < 7) return '${difference.inDays} days ago';
+  if (difference.inDays == 0 && now.day == local.day) return l10n.today;
+  if (difference.inDays == 1 || (difference.inDays == 0 && now.day != local.day)) return l10n.yesterday;
+  if (difference.inDays < 7) return l10n.daysAgo(difference.inDays);
 
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  return '${months[local.month - 1]} ${local.day}, ${local.year}';
+  return DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(local);
 }

@@ -5,7 +5,9 @@ import '../core/models/bike.dart';
 import '../core/models/rider_stats.dart';
 import '../core/repositories/bike_repository.dart';
 import '../core/repositories/ride_repository.dart';
+import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
+import '../state/locale_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
@@ -49,8 +51,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _showLanguagePicker(BuildContext context) async {
+    final localeProvider = context.read<LocaleProvider>();
+    final current = localeProvider.locale;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: RedlColors.surface1,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext)!;
+        Widget option(String label, Locale? locale) {
+          final selected = current?.languageCode == locale?.languageCode;
+          return ListTile(
+            title: Text(label, style: RedlText.body()),
+            trailing: selected ? const Icon(Icons.check, color: RedlColors.accent) : null,
+            onTap: () {
+              localeProvider.setLocale(locale);
+              Navigator.of(sheetContext).pop();
+            },
+          );
+        }
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(RedlSpacing.screenPadding, 20, RedlSpacing.screenPadding, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(l10n.languageLabel, style: RedlText.eyebrow()),
+                ),
+              ),
+              option('English', const Locale('en')),
+              option('Français', const Locale('fr')),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = context.watch<AuthProvider>().user;
     final memberSince = user?.createdAt?.year.toString() ?? '—';
 
@@ -91,10 +135,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Positioned(
                       right: RedlSpacing.screenPadding,
                       top: 72,
-                      child: IconButton(
-                        onPressed: () => context.read<AuthProvider>().logout(),
-                        icon: const Icon(Icons.logout, color: RedlColors.baseAlt),
-                        tooltip: 'Log out',
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => _showLanguagePicker(context),
+                            icon: const Icon(Icons.language, color: RedlColors.baseAlt),
+                            tooltip: l10n.languageLabel,
+                          ),
+                          IconButton(
+                            onPressed: () => context.read<AuthProvider>().logout(),
+                            icon: const Icon(Icons.logout, color: RedlColors.baseAlt),
+                            tooltip: l10n.logOut,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -107,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Text(user?.name ?? '', style: RedlText.title(fontSize: 16)),
                     const SizedBox(height: 4),
-                    Text('Rider since $memberSince', style: RedlText.meta()),
+                    Text(l10n.riderSince(memberSince), style: RedlText.meta()),
                     const SizedBox(height: 20),
                     if (_loading)
                       const Padding(
@@ -122,19 +175,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Row(
                           children: [
-                            _ProfileStat(label: 'RIDES', value: '${_stats?.ridesCount ?? 0}'),
-                            _ProfileStat(label: 'DISTANCE', value: '${(_stats?.distanceKm ?? 0).toStringAsFixed(0)} km'),
-                            _ProfileStat(label: 'THIS WEEK', value: '${(_stats?.weekDistanceKm ?? 0).toStringAsFixed(0)} km'),
+                            _ProfileStat(label: l10n.statRides, value: '${_stats?.ridesCount ?? 0}'),
+                            _ProfileStat(label: l10n.statDistance, value: '${(_stats?.distanceKm ?? 0).toStringAsFixed(0)} km'),
+                            _ProfileStat(label: l10n.feedThisWeek, value: '${(_stats?.weekDistanceKm ?? 0).toStringAsFixed(0)} km'),
                           ],
                         ),
                       ),
                     const SizedBox(height: 24),
-                    Text('VEHICLES', style: RedlText.eyebrow()),
+                    Text(l10n.vehiclesLabel, style: RedlText.eyebrow()),
                     const SizedBox(height: 12),
                     if (_bikes.isEmpty)
                       GestureDetector(
                         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GarageScreen())).then((_) => _load()),
-                        child: Text('Add a bike to your garage', style: RedlText.body(fontSize: 13, color: RedlColors.textSecondary)),
+                        child: Text(l10n.addBikeToGarage, style: RedlText.body(fontSize: 13, color: RedlColors.textSecondary)),
                       )
                     else
                       Wrap(

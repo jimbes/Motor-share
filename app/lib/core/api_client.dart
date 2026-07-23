@@ -1,4 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
+
+import '../l10n/app_localizations.dart';
 import 'api_config.dart';
 
 /// Thin Dio wrapper. Holds the current bearer token in memory (set by
@@ -27,7 +30,7 @@ class ApiClient {
 
 /// Flattens Laravel's validation error payload
 /// ({"message": "...", "errors": {"field": ["msg"]}}) into a single string.
-String apiErrorMessage(Object error) {
+String apiErrorMessage(BuildContext context, Object error) {
   if (error is DioException) {
     final data = error.response?.data;
     if (data is Map) {
@@ -38,8 +41,8 @@ String apiErrorMessage(Object error) {
       if (data['message'] != null) return data['message'].toString();
     }
     if (error.type == DioExceptionType.connectionTimeout || error.type == DioExceptionType.connectionError) {
-      return 'Could not reach the server. Check your connection and API URL.';
+      return AppLocalizations.of(context)!.apiErrorNetwork;
     }
   }
-  return 'Something went wrong. Please try again.';
+  return AppLocalizations.of(context)!.apiErrorGeneric;
 }

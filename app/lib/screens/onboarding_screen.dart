@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/redl_spacing.dart';
 import '../widgets/redl_buttons.dart';
 import '../widgets/redl_logo.dart';
@@ -11,6 +12,7 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -21,14 +23,14 @@ class OnboardingScreen extends StatelessWidget {
               const RedlLockup(),
               const Spacer(),
               RedlPrimaryButton(
-                label: 'Create Account',
+                label: l10n.actionCreateAccount,
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const RegisterScreen()),
                 ),
               ),
               const SizedBox(height: 12),
               RedlSecondaryButton(
-                label: 'Log In',
+                label: l10n.actionLogIn,
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                 ),

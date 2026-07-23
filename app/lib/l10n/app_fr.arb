@@ -1,0 +1,93 @@
+{
+  "@@locale": "fr",
+
+  "appName": "REDL",
+  "appTagline": "Suivez chaque virage.",
+
+  "actionCreateAccount": "Créer un compte",
+  "actionLogIn": "Se connecter",
+  "actionCancel": "Annuler",
+  "actionRemove": "Supprimer",
+  "actionSave": "Enregistrer",
+  "actionRetry": "Réessayer",
+
+  "fieldEmail": "E-mail",
+  "fieldEmailInvalid": "Entrez une adresse e-mail valide",
+  "fieldPassword": "Mot de passe",
+  "fieldPasswordRequired": "Entrez votre mot de passe",
+  "fieldPasswordMinLength": "Au moins 8 caractères",
+  "fieldName": "Nom",
+  "fieldNameRequired": "Entrez votre nom",
+
+  "loginTitle": "Content de vous revoir.",
+  "loginSubtitle": "Connectez-vous pour continuer à suivre vos trajets.",
+
+  "registerTitle": "Rejoignez REDL.",
+  "registerSubtitle": "Commencez à suivre chaque trajet.",
+
+  "feedGreeting": "Salut, {name}",
+  "feedThisWeek": "CETTE SEMAINE",
+  "feedRecentActivity": "ACTIVITÉ RÉCENTE",
+  "feedEmpty": "Aucun trajet pour l'instant. Enregistrez-en un !",
+  "feedLoadError": "Impossible de charger le fil d'actualité.",
+
+  "ridesCount": "{count, plural, =0{0 trajet} =1{1 trajet} other{{count} trajets}}",
+  "likesCount": "{count, plural, =0{0 j'aime} =1{1 j'aime} other{{count} j'aime}}",
+  "commentsCount": "{count, plural, =0{0 commentaire} =1{1 commentaire} other{{count} commentaires}}",
+  "daysAgo": "{count, plural, =1{il y a 1 jour} other{il y a {count} jours}}",
+  "today": "Aujourd'hui",
+  "yesterday": "Hier",
+
+  "recordPermissionError": "L'autorisation de localisation est nécessaire pour enregistrer un trajet.",
+  "recordStartRide": "Démarrer",
+  "recordingLabel": "ENREGISTREMENT",
+  "pausedLabel": "EN PAUSE",
+  "statSpeed": "VITESSE",
+  "statDistance": "DISTANCE",
+  "statTime": "TEMPS",
+  "statDuration": "DURÉE",
+  "statAvgSpeed": "VITESSE MOY.",
+  "statElevation": "DÉNIVELÉ",
+  "actionPause": "Pause",
+  "actionResume": "Reprendre",
+
+  "rideCompleteTitle": "Trajet terminé",
+  "defaultRideTitle": "Balade matinale",
+  "fieldTitle": "Titre",
+  "fieldDescriptionOptional": "Description (optionnel)",
+  "fieldBikeOptional": "Moto (optionnel)",
+  "bikeNone": "Aucune",
+  "photosLabel": "PHOTOS",
+  "rideTitleRequired": "Donnez un titre à votre trajet.",
+  "actionSaveRide": "Enregistrer le trajet",
+
+  "rideNotFound": "Trajet introuvable.",
+  "rideLoadError": "Impossible de charger ce trajet.",
+  "commentsLabel": "COMMENTAIRES",
+  "addCommentHint": "Ajouter un commentaire...",
+
+  "garageTitle": "Garage",
+  "removeBikeTitle": "Supprimer {name} ?",
+  "removeBikeContent": "Cela ne supprimera pas les trajets déjà enregistrés avec cette moto.",
+  "noBikesYet": "Aucune moto pour l'instant.",
+  "addFirstBike": "Ajoutez votre première moto",
+
+  "logOut": "Déconnexion",
+  "riderSince": "Motard depuis {year}",
+  "statRides": "TRAJETS",
+  "vehiclesLabel": "VÉHICULES",
+  "addBikeToGarage": "Ajoutez une moto à votre garage",
+  "languageLabel": "Langue",
+
+  "editBikeTitle": "Modifier la moto",
+  "addBikeTitle": "Ajouter une moto",
+  "fieldBrand": "Marque",
+  "fieldModel": "Modèle",
+  "fieldNicknameOptional": "Surnom (optionnel)",
+  "fieldYear": "Année",
+  "fieldEngineCc": "Cylindrée (cc)",
+  "bikeBrandModelRequired": "La marque et le modèle sont requis.",
+
+  "apiErrorNetwork": "Impossible de joindre le serveur. Vérifiez votre connexion et l'URL de l'API.",
+  "apiErrorGeneric": "Une erreur s'est produite. Veuillez réessayer."
+}

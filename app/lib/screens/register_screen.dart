@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show TextInput;
 import 'package:provider/provider.dart';
 
 import '../core/api_client.dart';
+import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -50,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       TextInput.finishAutofillContext();
       if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
-      setState(() => _error = apiErrorMessage(e));
+      if (mounted) setState(() => _error = apiErrorMessage(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -58,8 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
+      appBar: AppBar(title: Text(l10n.actionCreateAccount)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: RedlSpacing.screenPadding, vertical: 24),
@@ -68,9 +70,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Join REDL.', style: RedlText.title(fontSize: 20)),
+                Text(l10n.registerTitle, style: RedlText.title(fontSize: 20)),
                 const SizedBox(height: 4),
-                Text('Start tracking every ride.', style: RedlText.meta(color: RedlColors.textSecondary)),
+                Text(l10n.registerSubtitle, style: RedlText.meta(color: RedlColors.textSecondary)),
                 const SizedBox(height: 32),
                 AutofillGroup(
                   child: Column(
@@ -81,8 +83,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         style: RedlText.body(),
                         textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.name],
-                        decoration: const InputDecoration(labelText: 'Name'),
-                        validator: (value) => (value == null || value.trim().isEmpty) ? 'Enter your name' : null,
+                        decoration: InputDecoration(labelText: l10n.fieldName),
+                        validator: (value) => (value == null || value.trim().isEmpty) ? l10n.fieldNameRequired : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -91,8 +93,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.email, AutofillHints.username],
-                        decoration: const InputDecoration(labelText: 'Email'),
-                        validator: (value) => (value == null || !value.contains('@')) ? 'Enter a valid email' : null,
+                        decoration: InputDecoration(labelText: l10n.fieldEmail),
+                        validator: (value) => (value == null || !value.contains('@')) ? l10n.fieldEmailInvalid : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -101,8 +103,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.newPassword],
-                        decoration: const InputDecoration(labelText: 'Password', helperText: 'At least 8 characters'),
-                        validator: (value) => (value == null || value.length < 8) ? 'At least 8 characters' : null,
+                        decoration: InputDecoration(labelText: l10n.fieldPassword, helperText: l10n.fieldPasswordMinLength),
+                        validator: (value) => (value == null || value.length < 8) ? l10n.fieldPasswordMinLength : null,
                         onFieldSubmitted: (_) => _submit(),
                       ),
                     ],
@@ -113,7 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text(_error!, style: RedlText.body(fontSize: 13, color: RedlColors.accentTint)),
                 ],
                 const SizedBox(height: 24),
-                RedlPrimaryButton(label: 'Create Account', onPressed: _submit, loading: _loading),
+                RedlPrimaryButton(label: l10n.actionCreateAccount, onPressed: _submit, loading: _loading),
               ],
             ),
           ),
