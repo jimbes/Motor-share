@@ -135,21 +135,11 @@ class _GarageScreenState extends State<GarageScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Flexible(child: Text(bike.displayName, style: RedlText.title(fontSize: 14))),
-                                          if (bike.isDefault) ...[
-                                            const SizedBox(width: 8),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: RedlColors.accent.withValues(alpha: 0.18),
-                                                borderRadius: BorderRadius.circular(RedlRadius.sm),
-                                              ),
-                                              child: Text(l10n.defaultBikeLabel, style: RedlText.eyebrow(fontSize: 8, color: RedlColors.accent)),
-                                            ),
-                                          ],
-                                        ],
+                                      Text(
+                                        bike.displayName,
+                                        style: RedlText.title(fontSize: 14),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 3),
                                       Text(
@@ -159,25 +149,49 @@ class _GarageScreenState extends State<GarageScreen> {
                                           if (bike.engineCc != null) '${bike.engineCc} cc',
                                         ].join(' · '),
                                         style: RedlText.meta(fontSize: 11),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
+                                      if (bike.isDefault) ...[
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: RedlColors.accent.withValues(alpha: 0.18),
+                                            borderRadius: BorderRadius.circular(RedlRadius.sm),
+                                          ),
+                                          child: Text(l10n.defaultBikeLabel, style: RedlText.eyebrow(fontSize: 8, color: RedlColors.accent)),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
                                 IconButton(
                                   onPressed: () => _setDefault(bike),
                                   tooltip: l10n.setAsDefaultTooltip,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                   icon: Icon(
                                     bike.isDefault ? Icons.star : Icons.star_border,
                                     size: 18,
                                     color: bike.isDefault ? RedlColors.accent : RedlColors.textSecondary,
                                   ),
                                 ),
+                                const SizedBox(width: 12),
                                 IconButton(
                                   onPressed: () => _editBike(bike),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                   icon: const Icon(Icons.edit_outlined, size: 18, color: RedlColors.textSecondary),
                                 ),
+                                const SizedBox(width: 12),
                                 IconButton(
                                   onPressed: () => _deleteBike(bike),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                   icon: const Icon(Icons.delete_outline, size: 18, color: RedlColors.textSecondary),
                                 ),
                               ],

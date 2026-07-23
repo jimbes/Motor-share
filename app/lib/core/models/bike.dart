@@ -1,3 +1,5 @@
+import 'bike_photo.dart';
+
 class Bike {
   const Bike({
     required this.id,
@@ -7,6 +9,7 @@ class Bike {
     this.nickname,
     this.engineCc,
     this.photoUrl,
+    this.photos = const [],
     this.isDefault = false,
   });
 
@@ -17,6 +20,7 @@ class Bike {
   final String? nickname;
   final int? engineCc;
   final String? photoUrl;
+  final List<BikePhoto> photos;
   final bool isDefault;
 
   String get displayName => nickname?.isNotEmpty == true ? nickname! : '$brand $model';
@@ -30,6 +34,9 @@ class Bike {
       nickname: json['nickname'] as String?,
       engineCc: json['engine_cc'] as int?,
       photoUrl: json['photo_url'] as String?,
+      photos: (json['photos'] as List<dynamic>? ?? [])
+          .map((e) => BikePhoto.fromJson(e as Map<String, dynamic>))
+          .toList(),
       isDefault: json['is_default'] as bool? ?? false,
     );
   }

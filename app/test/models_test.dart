@@ -42,6 +42,26 @@ void main() {
       final bike = Bike.fromJson({'id': 1, 'brand': 'Ducati', 'model': 'Monster', 'is_default': true});
       expect(bike.isDefault, isTrue);
     });
+
+    test('photos default to an empty list when absent', () {
+      final bike = Bike.fromJson({'id': 1, 'brand': 'Ducati', 'model': 'Monster'});
+      expect(bike.photos, isEmpty);
+    });
+
+    test('parses the photo gallery when present', () {
+      final bike = Bike.fromJson({
+        'id': 1,
+        'brand': 'Ducati',
+        'model': 'Monster',
+        'photos': [
+          {'id': 10, 'url': 'https://example.com/a.jpg'},
+          {'id': 11, 'url': 'https://example.com/b.jpg'},
+        ],
+      });
+      expect(bike.photos, hasLength(2));
+      expect(bike.photos.first.id, 10);
+      expect(bike.photos.last.url, 'https://example.com/b.jpg');
+    });
   });
 
   group('AppUser', () {

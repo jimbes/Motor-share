@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../core/api_client.dart';
 import '../core/models/bike.dart';
+import '../core/models/bike_photo.dart';
 import '../core/repositories/bike_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
@@ -40,9 +41,18 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
   late final _nicknameController = TextEditingController(text: widget.existing?.nickname ?? '');
   late final _yearController = TextEditingController(text: widget.existing?.year?.toString() ?? '');
   late final _ccController = TextEditingController(text: widget.existing?.engineCc?.toString() ?? '');
-  XFile? _pickedPhoto;
+  List<BikePhoto> _existingPhotos = [];
+  final List<XFile> _pickedPhotos = [];
   bool _saving = false;
   String? _error;
+
+  int? get _bikeId => widget.existing?.id;
+
+  @override
+  void initState() {
+    super.initState();
+    _existingPhotos = List.of(widget.existing?.photos ?? const []);
+  }
 
   @override
   void dispose() {
@@ -83,7 +93,23 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
     if (source == null) return;
 
     final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
-    if (picked != null && mounted) setState(() => _pickedPhoto = picked);
+    if (picked != null && mounted) setState(() => _pickedPhotos.add(picked));
+  }
+
+  void _removePickedPhoto(XFile photo) {
+    setState(() => _pickedPhotos.remove(photo));
+  }
+
+  Future<void> _removeExistingPhoto(BikePhoto photo) async {
+    final bikeId = _bikeId;
+    if (bikeId == null) return;
+    final previous = List.of(_existingPhotos);
+    setState(() => _existingPhotos.removeWhere((p) => p.id == photo.id));
+    try {
+      await context.read<BikeRepository>().removePhoto(bikeId, photo.id);
+    } catch (_) {
+      if (mounted) setState(() => _existingPhotos = List.of(previous));
+    }
   }
 
   Future<void> _save() async {
@@ -110,9 +136,8 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
       final repo = context.read<BikeRepository>();
       var saved = widget.existing != null ? await repo.update(widget.existing!.id, bike) : await repo.create(bike);
 
-      final photo = _pickedPhoto;
-      if (photo != null) {
-        saved = await repo.uploadPhoto(saved.id, File(photo.path));
+      for (final photo in _pickedPhotos) {
+        saved = await repo.addPhoto(saved.id, File(photo.path));
       }
 
       if (mounted) Navigator.of(context).pop(saved);
@@ -126,7 +151,6 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final existingPhotoUrl = widget.existing?.photoUrl;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -141,28 +165,42 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
           children: [
             Text(widget.existing != null ? l10n.editBikeTitle : l10n.addBikeTitle, style: RedlText.title(fontSize: 16)),
             const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _pickPhoto,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(RedlRadius.sm),
-                child: Container(
-                  height: 120,
-                  color: RedlColors.surface2,
-                  child: _pickedPhoto != null
-                      ? Image.file(File(_pickedPhoto!.path), fit: BoxFit.cover, width: double.infinity)
-                      : existingPhotoUrl != null
-                          ? Image.network(existingPhotoUrl, fit: BoxFit.cover, width: double.infinity)
-                          : Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.add_a_photo_outlined, color: RedlColors.textSecondary, size: 22),
-                                  const SizedBox(height: 6),
-                                  Text(l10n.addBikePhotoLabel, style: RedlText.meta()),
-                                ],
-                              ),
-                            ),
-                ),
+            SizedBox(
+              height: 88,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  ..._existingPhotos.map((photo) => Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: _PhotoThumb(
+                          image: NetworkImage(photo.url),
+                          onRemove: () => _removeExistingPhoto(photo),
+                        ),
+                      )),
+                  ..._pickedPhotos.map((photo) => Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: _PhotoThumb(
+                          image: FileImage(File(photo.path)),
+                          onRemove: () => _removePickedPhoto(photo),
+                        ),
+                      )),
+                  GestureDetector(
+                    onTap: _pickPhoto,
+                    child: Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(color: RedlColors.surface2, borderRadius: BorderRadius.circular(RedlRadius.sm)),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.add_a_photo_outlined, color: RedlColors.textSecondary, size: 22),
+                          const SizedBox(height: 6),
+                          Text(l10n.addBikePhotoLabel, style: RedlText.meta(fontSize: 10), textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),
@@ -202,6 +240,38 @@ class _BikeFormSheetState extends State<_BikeFormSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PhotoThumb extends StatelessWidget {
+  const _PhotoThumb({required this.image, required this.onRemove});
+
+  final ImageProvider image;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(RedlRadius.sm),
+          child: Image(image: image, width: 88, height: 88, fit: BoxFit.cover),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(color: RedlColors.base, shape: BoxShape.circle),
+              child: const Icon(Icons.close, size: 14, color: RedlColors.baseAlt),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

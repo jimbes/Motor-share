@@ -99,6 +99,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = context.watch<AuthProvider>().user;
     final memberSince = user?.createdAt?.year.toString() ?? '—';
 
+    String? bannerPhotoUrl;
+    for (final bike in _bikes) {
+      if (bike.isDefault && bike.photoUrl != null) {
+        bannerPhotoUrl = bike.photoUrl;
+        break;
+      }
+    }
+
     return Scaffold(
       body: SafeArea(
         top: false,
@@ -117,7 +125,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       left: 0,
                       right: 0,
                       height: 120,
-                      child: Container(color: RedlColors.accent),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: RedlColors.accent,
+                          image: bannerPhotoUrl != null
+                              ? DecorationImage(
+                                  image: NetworkImage(bannerPhotoUrl),
+                                  fit: BoxFit.cover,
+                                  colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.35), BlendMode.darken),
+                                )
+                              : null,
+                        ),
+                      ),
                     ),
                     Positioned(
                       top: 60 + 120 - 44,

@@ -25,9 +25,14 @@ class BikeRepository {
     return Bike.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<Bike> uploadPhoto(int id, File photo) async {
+  Future<Bike> addPhoto(int id, File photo) async {
     final formData = FormData.fromMap({'photo': await MultipartFile.fromFile(photo.path)});
-    final response = await _client.dio.post('/bikes/$id/photo', data: formData);
+    final response = await _client.dio.post('/bikes/$id/photos', data: formData);
+    return Bike.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<Bike> removePhoto(int id, int photoId) async {
+    final response = await _client.dio.delete('/bikes/$id/photos/$photoId');
     return Bike.fromJson(response.data as Map<String, dynamic>);
   }
 
