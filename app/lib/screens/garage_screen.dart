@@ -109,11 +109,16 @@ class _GarageScreenState extends State<GarageScreen> {
                             decoration: BoxDecoration(color: RedlColors.surface2, borderRadius: BorderRadius.circular(RedlRadius.sm)),
                             child: Row(
                               children: [
-                                Container(
-                                  width: 44,
-                                  height: 32,
-                                  decoration: BoxDecoration(color: RedlColors.surface4, borderRadius: BorderRadius.circular(RedlRadius.sm)),
-                                  child: const Icon(Icons.two_wheeler_rounded, color: RedlColors.baseAlt, size: 20),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(RedlRadius.sm),
+                                  child: Container(
+                                    width: 44,
+                                    height: 32,
+                                    color: RedlColors.surface4,
+                                    child: bike.photoUrl != null
+                                        ? Image.network(bike.photoUrl!, fit: BoxFit.cover)
+                                        : const Icon(Icons.two_wheeler_rounded, color: RedlColors.baseAlt, size: 20),
+                                  ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(

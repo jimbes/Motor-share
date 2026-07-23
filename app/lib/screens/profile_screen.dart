@@ -11,6 +11,7 @@ import '../state/locale_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
+import 'edit_profile_screen.dart';
 import 'garage_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -121,15 +122,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Positioned(
                       top: 60 + 120 - 44,
                       left: RedlSpacing.screenPadding,
-                      child: Container(
-                        width: 84,
-                        height: 84,
-                        decoration: BoxDecoration(
-                          color: RedlColors.surface4,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: RedlColors.base, width: 4),
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+                        child: Container(
+                          width: 84,
+                          height: 84,
+                          decoration: BoxDecoration(
+                            color: RedlColors.surface4,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: RedlColors.base, width: 4),
+                            image: user?.avatarUrl != null
+                                ? DecorationImage(image: NetworkImage(user!.avatarUrl!), fit: BoxFit.cover)
+                                : null,
+                          ),
+                          child: user?.avatarUrl == null
+                              ? const Icon(Icons.person, color: RedlColors.baseAlt, size: 36)
+                              : null,
                         ),
-                        child: const Icon(Icons.person, color: RedlColors.baseAlt, size: 36),
                       ),
                     ),
                     Positioned(
@@ -137,6 +146,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       top: 72,
                       child: Row(
                         children: [
+                          IconButton(
+                            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+                            icon: const Icon(Icons.edit_outlined, color: RedlColors.baseAlt),
+                            tooltip: l10n.editProfileTitle,
+                          ),
                           IconButton(
                             onPressed: () => _showLanguagePicker(context),
                             icon: const Icon(Icons.language, color: RedlColors.baseAlt),
@@ -159,6 +173,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(user?.name ?? '', style: RedlText.title(fontSize: 16)),
+                    if (user?.username != null) ...[
+                      const SizedBox(height: 2),
+                      Text('@${user!.username}', style: RedlText.meta(color: RedlColors.textSecondary)),
+                    ],
                     const SizedBox(height: 4),
                     Text(l10n.riderSince(memberSince), style: RedlText.meta()),
                     const SizedBox(height: 20),

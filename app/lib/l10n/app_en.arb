@@ -150,6 +150,25 @@
   "photosLoadError": "Could not load your photos.",
   "photosMapEmpty": "None of your photos have location data yet.",
 
+  "editProfileTitle": "Edit Profile",
+  "changePhotoLabel": "Change photo",
+  "actionTakePhoto": "Take Photo",
+  "actionChooseFromGallery": "Choose from Gallery",
+  "fieldUsername": "Username",
+  "fieldUsernameHelper": "Letters, numbers, and underscores only",
+  "fieldUsernameInvalid": "Letters, numbers, and underscores only",
+  "profileUpdateError": "Could not update your profile.",
+
+  "searchTitle": "Find Riders",
+  "searchHint": "Search by username or name",
+  "searchPrompt": "Search for riders by username or name.",
+  "searchEmpty": "No riders found.",
+  "riderProfileLoadError": "Could not load this rider's profile.",
+  "noUsername": "No username set",
+
+  "addBikePhotoLabel": "Add Photo",
+  "changeBikePhotoLabel": "Change Photo",
+
   "apiErrorNetwork": "Could not reach the server. Check your connection and API URL.",
   "apiErrorGeneric": "Something went wrong. Please try again."
 }

@@ -6,6 +6,7 @@ class Bike {
     this.year,
     this.nickname,
     this.engineCc,
+    this.photoUrl,
   });
 
   final int id;
@@ -14,6 +15,7 @@ class Bike {
   final int? year;
   final String? nickname;
   final int? engineCc;
+  final String? photoUrl;
 
   String get displayName => nickname?.isNotEmpty == true ? nickname! : '$brand $model';
 
@@ -25,6 +27,7 @@ class Bike {
       year: json['year'] as int?,
       nickname: json['nickname'] as String?,
       engineCc: json['engine_cc'] as int?,
+      photoUrl: json['photo_url'] as String?,
     );
   }
 

@@ -3,8 +3,11 @@ import 'package:redl/core/models/bike.dart';
 import 'package:redl/core/models/my_photo.dart';
 import 'package:redl/core/models/ride.dart';
 import 'package:redl/core/models/ride_photo.dart';
+import 'package:redl/core/models/rider_profile.dart';
 import 'package:redl/core/models/rider_stats.dart';
 import 'package:redl/core/models/track_point.dart';
+import 'package:redl/core/models/user.dart';
+import 'package:redl/core/models/user_summary.dart';
 
 void main() {
   group('TrackPoint', () {
@@ -23,6 +26,61 @@ void main() {
 
       final withoutNickname = Bike.fromJson({'id': 2, 'brand': 'Yamaha', 'model': 'MT-07'});
       expect(withoutNickname.displayName, 'Yamaha MT-07');
+    });
+
+    test('parses the photo URL when present', () {
+      final bike = Bike.fromJson({'id': 1, 'brand': 'Ducati', 'model': 'Monster', 'photo_url': 'https://example.com/bike.jpg'});
+      expect(bike.photoUrl, 'https://example.com/bike.jpg');
+    });
+  });
+
+  group('AppUser', () {
+    test('parses username and avatarUrl when present', () {
+      final user = AppUser.fromJson({
+        'id': 1,
+        'name': 'Marco',
+        'username': 'marco_rides',
+        'email': 'marco@example.com',
+        'avatar_url': 'https://example.com/avatar.jpg',
+      });
+      expect(user.username, 'marco_rides');
+      expect(user.avatarUrl, 'https://example.com/avatar.jpg');
+    });
+
+    test('username and avatarUrl default to null when absent', () {
+      final user = AppUser.fromJson({'id': 1, 'name': 'Marco', 'email': 'marco@example.com'});
+      expect(user.username, isNull);
+      expect(user.avatarUrl, isNull);
+    });
+  });
+
+  group('UserSummary', () {
+    test('parses id, name, username, and avatarUrl', () {
+      final summary = UserSummary.fromJson({
+        'id': 2,
+        'name': 'Sara',
+        'username': 'sara_moto',
+        'avatar_url': 'https://example.com/sara.jpg',
+      });
+      expect(summary.id, 2);
+      expect(summary.username, 'sara_moto');
+      expect(summary.avatarUrl, 'https://example.com/sara.jpg');
+    });
+  });
+
+  group('RiderProfile', () {
+    test('computes distanceKm from distanceMeters', () {
+      final profile = RiderProfile.fromJson({
+        'id': 1,
+        'name': 'Marco',
+        'username': 'marco_rides',
+        'avatar_url': null,
+        'member_since': '2025-01-01T00:00:00Z',
+        'rides_count': 4,
+        'distance_meters': 12000,
+      });
+      expect(profile.distanceKm, 12.0);
+      expect(profile.memberSince.year, 2025);
     });
   });
 
@@ -51,6 +109,15 @@ void main() {
       expect(ride.avgSpeedKmh, 55.5);
       expect(ride.maxSpeedKmh, 120.0);
       expect(ride.distanceKm, 45.0);
+    });
+
+    test('parses the author as a UserSummary with username/avatar', () {
+      final json = sampleJson();
+      json['user'] = {'id': 1, 'name': 'Marco', 'username': 'marco_rides', 'avatar_url': 'https://example.com/a.jpg'};
+      final ride = Ride.fromJson(json);
+
+      expect(ride.user.username, 'marco_rides');
+      expect(ride.user.avatarUrl, 'https://example.com/a.jpg');
     });
 
     test('routeLine falls back to polyline when track is absent (feed responses)', () {

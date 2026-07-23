@@ -2,25 +2,16 @@ import 'ride_comment.dart';
 import 'ride_photo.dart';
 import 'speeding_event.dart';
 import 'track_point.dart';
-
-class RideAuthor {
-  const RideAuthor({required this.id, required this.name});
-
-  final int id;
-  final String name;
-
-  factory RideAuthor.fromJson(Map<String, dynamic> json) {
-    return RideAuthor(id: json['id'] as int, name: json['name'] as String);
-  }
-}
+import 'user_summary.dart';
 
 class RideBikeSummary {
-  const RideBikeSummary({required this.id, required this.brand, required this.model, this.nickname});
+  const RideBikeSummary({required this.id, required this.brand, required this.model, this.nickname, this.photoUrl});
 
   final int id;
   final String brand;
   final String model;
   final String? nickname;
+  final String? photoUrl;
 
   String get displayName => nickname?.isNotEmpty == true ? nickname! : '$brand $model';
 
@@ -30,6 +21,7 @@ class RideBikeSummary {
       brand: json['brand'] as String,
       model: json['model'] as String,
       nickname: json['nickname'] as String?,
+      photoUrl: json['photo_url'] as String?,
     );
   }
 }
@@ -69,7 +61,7 @@ class Ride {
   final double maxSpeedKmh;
   final int? speedScore;
   final List<SpeedingEvent>? speedingEvents;
-  final RideAuthor user;
+  final UserSummary user;
   final RideBikeSummary? bike;
   final List<TrackPoint> polyline;
   final List<TrackPoint>? track;
@@ -125,7 +117,7 @@ class Ride {
       speedingEvents: (json['speeding_events'] as List<dynamic>?)
           ?.map((e) => SpeedingEvent.fromJson(e as Map<String, dynamic>))
           .toList(),
-      user: RideAuthor.fromJson(json['user'] as Map<String, dynamic>),
+      user: UserSummary.fromJson(json['user'] as Map<String, dynamic>),
       bike: json['bike'] != null ? RideBikeSummary.fromJson(json['bike'] as Map<String, dynamic>) : null,
       polyline: (json['polyline'] as List<dynamic>? ?? [])
           .map((e) => TrackPoint.fromJson(e as Map<String, dynamic>))

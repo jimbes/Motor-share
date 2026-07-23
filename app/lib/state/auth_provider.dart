@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import '../core/api_client.dart';
@@ -56,6 +58,16 @@ class AuthProvider extends ChangeNotifier {
     _apiClient.setToken(result.token);
     user = result.user;
     status = AuthStatus.authenticated;
+    notifyListeners();
+  }
+
+  Future<void> updateProfile({required String name, String? username}) async {
+    user = await _authRepository.updateProfile(name: name, username: username);
+    notifyListeners();
+  }
+
+  Future<void> uploadAvatar(File avatar) async {
+    user = await _authRepository.uploadAvatar(avatar);
     notifyListeners();
   }
 

@@ -28,8 +28,11 @@ class RideRepository {
 
   final ApiClient _client;
 
-  Future<RideFeedPage> feed({int page = 1}) async {
-    final response = await _client.dio.get('/rides', queryParameters: {'page': page});
+  Future<RideFeedPage> feed({int page = 1, int? userId}) async {
+    final response = await _client.dio.get('/rides', queryParameters: {
+      'page': page,
+      if (userId != null) 'user_id': userId,
+    });
     final data = response.data as Map<String, dynamic>;
     final rides = (data['data'] as List<dynamic>).map((e) => Ride.fromJson(e as Map<String, dynamic>)).toList();
     final meta = data['meta'] as Map<String, dynamic>?;

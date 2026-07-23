@@ -6,6 +6,7 @@ import 'core/api_client.dart';
 import 'core/repositories/auth_repository.dart';
 import 'core/repositories/bike_repository.dart';
 import 'core/repositories/ride_repository.dart';
+import 'core/repositories/user_repository.dart';
 import 'core/route_observer.dart';
 import 'core/token_storage.dart';
 import 'l10n/app_localizations.dart';
@@ -31,6 +32,7 @@ class RedlApp extends StatelessWidget {
         Provider.value(value: authRepository),
         Provider(create: (_) => BikeRepository(apiClient)),
         Provider(create: (_) => RideRepository(apiClient)),
+        Provider(create: (_) => UserRepository(apiClient)),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(apiClient: apiClient, authRepository: authRepository, tokenStorage: tokenStorage)
             ..restore(),

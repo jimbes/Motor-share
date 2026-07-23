@@ -103,6 +103,25 @@
   "photosLoadError": "Impossible de charger vos photos.",
   "photosMapEmpty": "Aucune de vos photos n'a de données de localisation pour l'instant.",
 
+  "editProfileTitle": "Modifier le profil",
+  "changePhotoLabel": "Changer la photo",
+  "actionTakePhoto": "Prendre une photo",
+  "actionChooseFromGallery": "Choisir dans la galerie",
+  "fieldUsername": "Pseudo",
+  "fieldUsernameHelper": "Lettres, chiffres et underscores uniquement",
+  "fieldUsernameInvalid": "Lettres, chiffres et underscores uniquement",
+  "profileUpdateError": "Impossible de mettre à jour votre profil.",
+
+  "searchTitle": "Rechercher des motards",
+  "searchHint": "Rechercher par pseudo ou nom",
+  "searchPrompt": "Recherchez des motards par pseudo ou par nom.",
+  "searchEmpty": "Aucun motard trouvé.",
+  "riderProfileLoadError": "Impossible de charger le profil de ce motard.",
+  "noUsername": "Aucun pseudo défini",
+
+  "addBikePhotoLabel": "Ajouter une photo",
+  "changeBikePhotoLabel": "Changer la photo",
+
   "apiErrorNetwork": "Impossible de joindre le serveur. Vérifiez votre connexion et l'URL de l'API.",
   "apiErrorGeneric": "Une erreur s'est produite. Veuillez réessayer."
 }

@@ -12,6 +12,7 @@ import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
 import '../widgets/ride_card.dart';
 import 'ride_summary_screen.dart';
+import 'search_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -151,12 +152,24 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
                       children: [
                         Row(
                           children: [
-                            const CircleAvatar(radius: 16, backgroundColor: RedlColors.surface4),
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: RedlColors.surface4,
+                              backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                              child: user?.avatarUrl == null ? const Icon(Icons.person, size: 16, color: RedlColors.baseAlt) : null,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(l10n.feedGreeting(user?.name.split(' ').first ?? ''), style: RedlText.title(fontSize: 14)),
                             ),
-                            const CircleAvatar(radius: 16, backgroundColor: RedlColors.surface4, child: Icon(Icons.settings_outlined, size: 16, color: RedlColors.baseAlt)),
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchScreen())),
+                              child: const CircleAvatar(
+                                radius: 16,
+                                backgroundColor: RedlColors.surface4,
+                                child: Icon(Icons.search, size: 16, color: RedlColors.baseAlt),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
