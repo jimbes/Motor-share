@@ -2,18 +2,29 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart' as ph;
 
+import '../core/format.dart';
 import '../core/models/track_point.dart';
+import 'recording_task_handler.dart';
 
 enum RecordingState { idle, recording, paused, stopped }
+
+const _pauseResumeButtonId = 'pause_resume';
 
 /// Live GPS ride recording: filters noisy fixes, accumulates distance via
 /// the haversine formula, and tracks elapsed time - independent of any
 /// widget lifecycle so a screen rebuild never loses in-progress data.
+///
+/// The foreground service + notification (with a Pause/Resume button and
+/// live stats) is owned by flutter_foreground_task, which is what actually
+/// keeps the app process alive with the screen locked - geolocator's
+/// position stream just keeps running in this same (kept-alive) process.
 class RecordingController extends ChangeNotifier {
-  RecordingController();
+  RecordingController() {
+    FlutterForegroundTask.addTaskDataCallback(_onTaskData);
+  }
 
   RecordingState state = RecordingState.idle;
   final List<TrackPoint> track = [];
@@ -28,6 +39,7 @@ class RecordingController extends ChangeNotifier {
   Timer? _ticker;
   Position? _lastKept;
   DateTime? _lastResumeTime;
+  bool _serviceInitialized = false;
 
   static const _minAccuracyMeters = 25.0;
   static const _minDistanceFilterMeters = 5.0;
@@ -41,20 +53,52 @@ class RecordingController extends ChangeNotifier {
       return false;
     }
 
-    // Android 13+ requires this to be granted for the foreground-service
-    // notification (the thing that keeps GPS recording alive with the
-    // screen locked) to actually display and persist. Best-effort: a
-    // denial here doesn't block recording, it just makes the OS more
-    // likely to eventually kill the background service.
     if (defaultTargetPlatform == TargetPlatform.android) {
-      await ph.Permission.notification.request();
+      final notificationPermission = await FlutterForegroundTask.checkNotificationPermission();
+      if (notificationPermission != NotificationPermission.granted) {
+        await FlutterForegroundTask.requestNotificationPermission();
+      }
     }
 
     return await Geolocator.isLocationServiceEnabled();
   }
 
+  void _initForegroundTaskIfNeeded() {
+    if (_serviceInitialized) return;
+    _serviceInitialized = true;
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'redl_ride_recording',
+        channelName: 'Ride recording',
+        channelDescription: 'Shows live stats while a ride is being recorded.',
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(showNotification: false, playSound: false),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        allowWakeLock: true,
+        allowWifiLock: false,
+      ),
+    );
+  }
+
+  void _onTaskData(Object data) {
+    if (data is Map && data['buttonPressed'] == _pauseResumeButtonId) {
+      state == RecordingState.paused ? resume() : pause();
+    }
+  }
+
   Future<bool> start() async {
     if (!await _ensurePermission()) return false;
+
+    _initForegroundTaskIfNeeded();
+    await FlutterForegroundTask.startService(
+      serviceId: 501,
+      notificationTitle: 'Recording your ride',
+      notificationText: '0.00 km · 0s',
+      notificationButtons: const [NotificationButton(id: _pauseResumeButtonId, text: 'Pause')],
+      callback: recordingTaskHandlerCallback,
+    );
 
     state = RecordingState.recording;
     startedAt = DateTime.now();
@@ -70,11 +114,6 @@ class RecordingController extends ChangeNotifier {
       accuracy: LocationAccuracy.high,
       distanceFilter: 0,
       intervalDuration: const Duration(seconds: 2),
-      foregroundNotificationConfig: const ForegroundNotificationConfig(
-        notificationTitle: 'REDL is recording your ride',
-        notificationText: 'Tracking GPS in the background',
-        enableWakeLock: true,
-      ),
     );
 
     _positionSub = Geolocator.getPositionStream(locationSettings: settings).listen(_onPosition);
@@ -115,8 +154,20 @@ class RecordingController extends ChangeNotifier {
         elapsed += DateTime.now().difference(_lastResumeTime!);
         _lastResumeTime = DateTime.now();
       }
+      _updateNotification();
       notifyListeners();
     });
+  }
+
+  void _updateNotification() {
+    if (state != RecordingState.recording && state != RecordingState.paused) return;
+    FlutterForegroundTask.updateService(
+      notificationTitle: state == RecordingState.paused ? 'Ride paused' : 'Recording your ride',
+      notificationText: '${formatDistanceKm(distanceMeters / 1000)} · ${formatDuration(elapsed)}',
+      notificationButtons: [
+        NotificationButton(id: _pauseResumeButtonId, text: state == RecordingState.paused ? 'Resume' : 'Pause'),
+      ],
+    );
   }
 
   void pause() {
@@ -129,6 +180,7 @@ class RecordingController extends ChangeNotifier {
     }
     currentSpeedKmh = 0;
     state = RecordingState.paused;
+    _updateNotification();
     notifyListeners();
   }
 
@@ -138,6 +190,7 @@ class RecordingController extends ChangeNotifier {
     _positionSub?.resume();
     _startTicker();
     state = RecordingState.recording;
+    _updateNotification();
     notifyListeners();
   }
 
@@ -148,6 +201,7 @@ class RecordingController extends ChangeNotifier {
       elapsed += DateTime.now().difference(_lastResumeTime!);
     }
     state = RecordingState.stopped;
+    FlutterForegroundTask.stopService();
     notifyListeners();
   }
 
@@ -174,6 +228,7 @@ class RecordingController extends ChangeNotifier {
 
   @override
   void dispose() {
+    FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
     _positionSub?.cancel();
     _ticker?.cancel();
     super.dispose();
