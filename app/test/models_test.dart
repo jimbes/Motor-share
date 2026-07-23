@@ -91,6 +91,41 @@ void main() {
       });
       expect(profile.distanceKm, 12.0);
       expect(profile.memberSince.year, 2025);
+      expect(profile.isFollowing, isFalse);
+    });
+
+    test('parses follow state and counts when present', () {
+      final profile = RiderProfile.fromJson({
+        'id': 1,
+        'name': 'Marco',
+        'username': 'marco_rides',
+        'member_since': '2025-01-01T00:00:00Z',
+        'rides_count': 4,
+        'distance_meters': 12000,
+        'followers_count': 9,
+        'following_count': 3,
+        'is_following': true,
+      });
+      expect(profile.followersCount, 9);
+      expect(profile.followingCount, 3);
+      expect(profile.isFollowing, isTrue);
+    });
+
+    test('copyWith updates follow state without losing other fields', () {
+      final profile = RiderProfile.fromJson({
+        'id': 1,
+        'name': 'Marco',
+        'username': 'marco_rides',
+        'member_since': '2025-01-01T00:00:00Z',
+        'rides_count': 4,
+        'distance_meters': 12000,
+        'followers_count': 9,
+        'is_following': false,
+      });
+      final followed = profile.copyWith(isFollowing: true, followersCount: 10);
+      expect(followed.isFollowing, isTrue);
+      expect(followed.followersCount, 10);
+      expect(followed.name, 'Marco');
     });
   });
 
@@ -128,6 +163,23 @@ void main() {
 
       expect(ride.user.username, 'marco_rides');
       expect(ride.user.avatarUrl, 'https://example.com/a.jpg');
+    });
+
+    test('participants default to an empty list when absent', () {
+      final ride = Ride.fromJson(sampleJson());
+      expect(ride.participants, isEmpty);
+    });
+
+    test('parses tagged participants when present', () {
+      final json = sampleJson();
+      json['participants'] = [
+        {'id': 2, 'name': 'Sara', 'username': 'sara_moto', 'avatar_url': null},
+      ];
+      final ride = Ride.fromJson(json);
+
+      expect(ride.participants, hasLength(1));
+      expect(ride.participants.first.name, 'Sara');
+      expect(ride.participants.first.username, 'sara_moto');
     });
 
     test('routeLine falls back to polyline when track is absent (feed responses)', () {

@@ -9,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
+import '../widgets/redl_buttons.dart';
 import '../widgets/ride_card.dart';
 import 'ride_summary_screen.dart';
 
@@ -28,6 +29,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
+  bool _togglingFollow = false;
   int _page = 1;
   String? _error;
 
@@ -96,6 +98,24 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     }
   }
 
+  Future<void> _toggleFollow() async {
+    final profile = _profile;
+    if (profile == null || _togglingFollow) return;
+
+    setState(() => _togglingFollow = true);
+    try {
+      final repo = context.read<UserRepository>();
+      final result = profile.isFollowing ? await repo.unfollow(profile.username) : await repo.follow(profile.username);
+      if (mounted) {
+        setState(() => _profile = profile.copyWith(isFollowing: result.isFollowing, followersCount: result.followersCount));
+      }
+    } catch (_) {
+      // Ignore - the button stays as-is, user can retry.
+    } finally {
+      if (mounted) setState(() => _togglingFollow = false);
+    }
+  }
+
   Future<void> _toggleLike(Ride ride) async {
     final repo = context.read<RideRepository>();
     final index = _rides.indexWhere((r) => r.id == ride.id);
@@ -156,6 +176,10 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        _profile!.isFollowing
+                            ? RedlSecondaryButton(label: l10n.actionFollowing, onPressed: _togglingFollow ? null : _toggleFollow)
+                            : RedlPrimaryButton(label: l10n.actionFollow, onPressed: _toggleFollow, loading: _togglingFollow),
                         const SizedBox(height: 20),
                         Container(
                           decoration: const BoxDecoration(
@@ -166,6 +190,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                             children: [
                               _ProfileStat(label: l10n.statRides, value: '${_profile!.ridesCount}'),
                               _ProfileStat(label: l10n.statDistance, value: '${_profile!.distanceKm.toStringAsFixed(0)} km'),
+                              _ProfileStat(label: l10n.statFollowers, value: '${_profile!.followersCount}'),
                             ],
                           ),
                         ),

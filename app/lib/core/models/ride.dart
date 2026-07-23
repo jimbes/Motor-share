@@ -45,6 +45,7 @@ class Ride {
     this.polyline = const [],
     this.track,
     this.photos = const [],
+    this.participants = const [],
     this.comments,
     required this.likesCount,
     required this.commentsCount,
@@ -66,6 +67,7 @@ class Ride {
   final List<TrackPoint> polyline;
   final List<TrackPoint>? track;
   final List<RidePhoto> photos;
+  final List<UserSummary> participants;
   final List<RideComment>? comments;
   final int likesCount;
   final int commentsCount;
@@ -96,6 +98,7 @@ class Ride {
       polyline: polyline,
       track: track,
       photos: photos,
+      participants: participants,
       comments: comments ?? this.comments,
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
@@ -127,6 +130,9 @@ class Ride {
           .toList(),
       photos: (json['photos'] as List<dynamic>? ?? [])
           .map((e) => RidePhoto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      participants: (json['participants'] as List<dynamic>? ?? [])
+          .map((e) => UserSummary.fromJson(e as Map<String, dynamic>))
           .toList(),
       comments: (json['comments'] as List<dynamic>?)
           ?.map((e) => RideComment.fromJson(e as Map<String, dynamic>))

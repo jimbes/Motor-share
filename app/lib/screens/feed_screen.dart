@@ -14,6 +14,8 @@ import '../widgets/ride_card.dart';
 import 'ride_summary_screen.dart';
 import 'search_screen.dart';
 
+enum _FeedScope { following, everyone }
+
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
 
@@ -24,6 +26,7 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> with RouteAware {
   final _scrollController = ScrollController();
   final List<Ride> _rides = [];
+  _FeedScope _scope = _FeedScope.following;
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
@@ -74,7 +77,8 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
     });
     try {
       final repo = context.read<RideRepository>();
-      final results = await Future.wait([repo.feed(page: 1), repo.myStats()]);
+      final scope = _scope == _FeedScope.following ? 'following' : null;
+      final results = await Future.wait([repo.feed(page: 1, scope: scope), repo.myStats()]);
       final page = results[0] as RideFeedPage;
       final stats = results[1] as RiderStats;
       setState(() {
@@ -95,7 +99,8 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
   Future<void> _loadMore() async {
     setState(() => _loadingMore = true);
     try {
-      final page = await context.read<RideRepository>().feed(page: _page + 1);
+      final scope = _scope == _FeedScope.following ? 'following' : null;
+      final page = await context.read<RideRepository>().feed(page: _page + 1, scope: scope);
       setState(() {
         _rides.addAll(page.rides);
         _page += 1;
@@ -106,6 +111,12 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
     } finally {
       if (mounted) setState(() => _loadingMore = false);
     }
+  }
+
+  void _setScope(_FeedScope scope) {
+    if (scope == _scope) return;
+    setState(() => _scope = scope);
+    _load();
   }
 
   Future<void> _toggleLike(Ride ride) async {
@@ -189,13 +200,32 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Text(l10n.feedRecentActivity, style: RedlText.eyebrow()),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(l10n.feedRecentActivity, style: RedlText.eyebrow()),
+                            SegmentedButton<_FeedScope>(
+                              showSelectedIcon: false,
+                              style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                              segments: [
+                                ButtonSegment(value: _FeedScope.following, label: Text(l10n.feedScopeFollowing, style: RedlText.body(fontSize: 11))),
+                                ButtonSegment(value: _FeedScope.everyone, label: Text(l10n.feedScopeEveryone, style: RedlText.body(fontSize: 11))),
+                              ],
+                              selected: {_scope},
+                              onSelectionChanged: (selection) => _setScope(selection.first),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 12),
                         if (_rides.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 40),
                             child: Center(
-                              child: Text(l10n.feedEmpty, style: RedlText.meta(color: RedlColors.textSecondary)),
+                              child: Text(
+                                _scope == _FeedScope.following ? l10n.feedFollowingEmpty : l10n.feedEmpty,
+                                textAlign: TextAlign.center,
+                                style: RedlText.meta(color: RedlColors.textSecondary),
+                              ),
                             ),
                           )
                         else

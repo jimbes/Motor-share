@@ -12,6 +12,7 @@ import '../core/models/ride.dart';
 import '../core/models/ride_comment.dart';
 import '../core/models/speeding_event.dart';
 import '../core/models/track_point.dart';
+import '../core/models/user_summary.dart';
 import '../core/repositories/bike_repository.dart';
 import '../core/repositories/ride_repository.dart';
 import '../core/speed_color.dart';
@@ -21,6 +22,7 @@ import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
 import '../widgets/redl_buttons.dart';
+import '../widgets/rider_picker_sheet.dart';
 import '../widgets/route_preview_map.dart';
 
 enum _Mode { save, view }
@@ -70,6 +72,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   List<Bike> _bikes = [];
   Bike? _selectedBike;
   late final List<CapturedPhoto> _selectedPhotos = List.of(widget.initialPhotos);
+  final List<UserSummary> _selectedCompanions = [];
   bool _saving = false;
   String? _saveError;
 
@@ -146,6 +149,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     }
   }
 
+  Future<void> _addCompanion() async {
+    final rider = await showRiderPicker(context);
+    if (rider == null || !mounted) return;
+    if (_selectedCompanions.any((r) => r.id == rider.id)) return;
+    setState(() => _selectedCompanions.add(rider));
+  }
+
+  void _removeCompanion(UserSummary rider) {
+    setState(() => _selectedCompanions.removeWhere((r) => r.id == rider.id));
+  }
+
   Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) {
       setState(() => _saveError = AppLocalizations.of(context)!.rideTitleRequired);
@@ -172,6 +186,10 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
       for (final photo in _selectedPhotos) {
         await repo.uploadPhoto(ride.id, File(photo.file.path), lat: photo.lat, lng: photo.lng);
+      }
+
+      for (final companion in _selectedCompanions) {
+        if (companion.username != null) await repo.addParticipant(ride.id, companion.username!);
       }
 
       if (mounted) {
@@ -334,6 +352,32 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              Text(l10n.ridersLabel, style: RedlText.eyebrow()),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ..._selectedCompanions.map((rider) => Chip(
+                        backgroundColor: RedlColors.surface2,
+                        avatar: CircleAvatar(
+                          backgroundColor: RedlColors.surface4,
+                          backgroundImage: rider.avatarUrl != null ? NetworkImage(rider.avatarUrl!) : null,
+                          child: rider.avatarUrl == null ? const Icon(Icons.person, size: 14, color: RedlColors.baseAlt) : null,
+                        ),
+                        label: Text(rider.name, style: RedlText.body(fontSize: 12)),
+                        onDeleted: () => _removeCompanion(rider),
+                        deleteIconColor: RedlColors.textSecondary,
+                      )),
+                  ActionChip(
+                    backgroundColor: RedlColors.surface2,
+                    avatar: const Icon(Icons.add, size: 16, color: RedlColors.baseAlt),
+                    label: Text(l10n.addRiderLabel, style: RedlText.body(fontSize: 12)),
+                    onPressed: _addCompanion,
+                  ),
+                ],
+              ),
               if (_saveError != null) ...[
                 const SizedBox(height: 16),
                 Text(_saveError!, style: RedlText.body(fontSize: 13, color: RedlColors.accentTint)),
@@ -372,6 +416,13 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('${ride.user.name} · ${formatRelativeDate(context, ride.startedAt)}', style: RedlText.meta()),
+              if (ride.participants.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  l10n.withRiders(ride.participants.map((r) => r.name).join(', ')),
+                  style: RedlText.meta(color: RedlColors.textSecondary),
+                ),
+              ],
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(RedlRadius.sm),

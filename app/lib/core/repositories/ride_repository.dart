@@ -8,6 +8,7 @@ import '../models/ride.dart';
 import '../models/ride_comment.dart';
 import '../models/rider_stats.dart';
 import '../models/track_point.dart';
+import '../models/user_summary.dart';
 
 class RideFeedPage {
   const RideFeedPage({required this.rides, required this.hasMorePages});
@@ -28,10 +29,11 @@ class RideRepository {
 
   final ApiClient _client;
 
-  Future<RideFeedPage> feed({int page = 1, int? userId}) async {
+  Future<RideFeedPage> feed({int page = 1, int? userId, String? scope}) async {
     final response = await _client.dio.get('/rides', queryParameters: {
       'page': page,
       if (userId != null) 'user_id': userId,
+      if (scope != null) 'scope': scope,
     });
     final data = response.data as Map<String, dynamic>;
     final rides = (data['data'] as List<dynamic>).map((e) => Ride.fromJson(e as Map<String, dynamic>)).toList();
@@ -111,6 +113,16 @@ class RideRepository {
   }
 
   Future<void> deleteComment(int commentId) => _client.dio.delete('/comments/$commentId');
+
+  Future<List<UserSummary>> addParticipant(int rideId, String username) async {
+    final response = await _client.dio.post('/rides/$rideId/participants', data: {'username': username});
+    return (response.data as List<dynamic>).map((e) => UserSummary.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<UserSummary>> removeParticipant(int rideId, int userId) async {
+    final response = await _client.dio.delete('/rides/$rideId/participants/$userId');
+    return (response.data as List<dynamic>).map((e) => UserSummary.fromJson(e as Map<String, dynamic>)).toList();
+  }
 
   Future<RiderStats> myStats() async {
     final response = await _client.dio.get('/me/stats');

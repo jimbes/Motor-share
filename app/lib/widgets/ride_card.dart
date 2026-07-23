@@ -50,6 +50,13 @@ class RideCard extends StatelessWidget {
                     '${ride.user.name} · ${formatRelativeDate(context, ride.startedAt)}',
                     style: RedlText.meta(fontSize: 10.5),
                   ),
+                  if (ride.participants.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.withRiders(ride.participants.map((r) => r.name).join(', ')),
+                      style: RedlText.meta(fontSize: 10.5, color: RedlColors.textSecondary),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   Row(
                     children: [
