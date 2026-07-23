@@ -9,7 +9,13 @@ class RedlBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const _icons = [Icons.home_rounded, Icons.fiber_manual_record, Icons.two_wheeler_rounded, Icons.person_rounded];
+  static const _icons = [
+    Icons.home_rounded,
+    Icons.fiber_manual_record,
+    Icons.two_wheeler_rounded,
+    Icons.photo_library_rounded,
+    Icons.person_rounded,
+  ];
 
   @override
   Widget build(BuildContext context) {

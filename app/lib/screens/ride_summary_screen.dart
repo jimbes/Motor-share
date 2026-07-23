@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/api_client.dart';
 import '../core/format.dart';
 import '../core/models/bike.dart';
+import '../core/models/captured_photo.dart';
 import '../core/models/ride.dart';
 import '../core/models/ride_comment.dart';
 import '../core/models/speeding_event.dart';
@@ -33,6 +34,7 @@ class RideSummaryScreen extends StatefulWidget {
     required this.avgSpeedKmh,
     required this.maxSpeedKmh,
     required this.track,
+    this.initialPhotos = const [],
   })  : _mode = _Mode.save,
         rideId = null;
 
@@ -43,7 +45,8 @@ class RideSummaryScreen extends StatefulWidget {
         distanceMeters = null,
         avgSpeedKmh = null,
         maxSpeedKmh = null,
-        track = null;
+        track = null,
+        initialPhotos = const [];
 
   final _Mode _mode;
   final int? rideId;
@@ -53,6 +56,7 @@ class RideSummaryScreen extends StatefulWidget {
   final double? avgSpeedKmh;
   final double? maxSpeedKmh;
   final List<TrackPoint>? track;
+  final List<CapturedPhoto> initialPhotos;
 
   @override
   State<RideSummaryScreen> createState() => _RideSummaryScreenState();
@@ -65,7 +69,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   final _descriptionController = TextEditingController();
   List<Bike> _bikes = [];
   Bike? _selectedBike;
-  final List<XFile> _selectedPhotos = [];
+  late final List<CapturedPhoto> _selectedPhotos = List.of(widget.initialPhotos);
   bool _saving = false;
   String? _saveError;
 
@@ -131,7 +135,9 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Future<void> _pickPhotos() async {
     final picked = await ImagePicker().pickMultiImage(imageQuality: 85);
-    if (picked.isNotEmpty) setState(() => _selectedPhotos.addAll(picked));
+    if (picked.isNotEmpty) {
+      setState(() => _selectedPhotos.addAll(picked.map((file) => CapturedPhoto(file: file))));
+    }
   }
 
   Future<void> _save() async {
@@ -159,7 +165,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       );
 
       for (final photo in _selectedPhotos) {
-        await repo.uploadPhoto(ride.id, File(photo.path));
+        await repo.uploadPhoto(ride.id, File(photo.file.path), lat: photo.lat, lng: photo.lng);
       }
 
       if (mounted) {
@@ -307,7 +313,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                           padding: const EdgeInsets.only(right: 10),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(RedlRadius.sm),
-                            child: Image.file(File(photo.path), width: 72, height: 72, fit: BoxFit.cover),
+                            child: Image.file(File(photo.file.path), width: 72, height: 72, fit: BoxFit.cover),
                           ),
                         )),
                     GestureDetector(

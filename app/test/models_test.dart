@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redl/core/models/bike.dart';
+import 'package:redl/core/models/my_photo.dart';
 import 'package:redl/core/models/ride.dart';
+import 'package:redl/core/models/ride_photo.dart';
 import 'package:redl/core/models/rider_stats.dart';
 import 'package:redl/core/models/track_point.dart';
 
@@ -105,6 +107,44 @@ void main() {
       expect(ride.speedingEvents!.first.limitKmh, 50.0);
       expect(ride.speedingEvents!.first.maxSpeedKmh, 78.5);
       expect(ride.speedingEvents!.first.durationSeconds, 12);
+    });
+  });
+
+  group('RidePhoto', () {
+    test('parses coordinates when present', () {
+      final photo = RidePhoto.fromJson({'id': 1, 'url': 'https://example.com/a.jpg', 'lat': 43.5, 'lng': 5.4});
+      expect(photo.lat, 43.5);
+      expect(photo.lng, 5.4);
+    });
+
+    test('coordinates default to null when absent', () {
+      final photo = RidePhoto.fromJson({'id': 1, 'url': 'https://example.com/a.jpg'});
+      expect(photo.lat, isNull);
+      expect(photo.lng, isNull);
+    });
+  });
+
+  group('MyPhoto', () {
+    Map<String, dynamic> sampleJson({double? lat, double? lng}) => {
+          'id': 7,
+          'url': 'https://example.com/photo.jpg',
+          'lat': lat,
+          'lng': lng,
+          'created_at': '2026-01-02T09:00:00Z',
+          'ride': {'id': 3, 'title': 'Coastal Loop', 'started_at': '2026-01-02T08:00:00Z'},
+        };
+
+    test('parses ride info alongside the photo', () {
+      final photo = MyPhoto.fromJson(sampleJson(lat: 43.5, lng: 5.4));
+      expect(photo.rideId, 3);
+      expect(photo.rideTitle, 'Coastal Loop');
+      expect(photo.hasLocation, isTrue);
+    });
+
+    test('hasLocation is false when coordinates are missing', () {
+      final photo = MyPhoto.fromJson(sampleJson());
+      expect(photo.lat, isNull);
+      expect(photo.hasLocation, isFalse);
     });
   });
 

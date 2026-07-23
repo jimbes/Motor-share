@@ -40,6 +40,7 @@
 
   "recordPermissionError": "L'autorisation de localisation est nécessaire pour enregistrer un trajet.",
   "recordStartRide": "Démarrer",
+  "capturePhotoTooltip": "Prendre une photo",
   "recordingLabel": "ENREGISTREMENT",
   "pausedLabel": "EN PAUSE",
   "statSpeed": "VITESSE",
@@ -94,6 +95,13 @@
   "fieldYear": "Année",
   "fieldEngineCc": "Cylindrée (cc)",
   "bikeBrandModelRequired": "La marque et le modèle sont requis.",
+
+  "photosTitle": "Photos",
+  "photosViewGrid": "Grille",
+  "photosViewMap": "Carte",
+  "photosEmpty": "Aucune photo pour l'instant. Prenez-en pendant votre prochain trajet !",
+  "photosLoadError": "Impossible de charger vos photos.",
+  "photosMapEmpty": "Aucune de vos photos n'a de données de localisation pour l'instant.",
 
   "apiErrorNetwork": "Impossible de joindre le serveur. Vérifiez votre connexion et l'URL de l'API.",
   "apiErrorGeneric": "Une erreur s'est produite. Veuillez réessayer."

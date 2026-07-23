@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/redl_bottom_nav.dart';
 import 'feed_screen.dart';
 import 'garage_screen.dart';
+import 'photos_screen.dart';
 import 'profile_screen.dart';
 import 'record_screen.dart';
 
@@ -20,6 +21,7 @@ class _HomeShellState extends State<HomeShell> {
     FeedScreen(),
     RecordScreen(),
     GarageScreen(),
+    PhotosScreen(),
     ProfileScreen(),
   ];
 

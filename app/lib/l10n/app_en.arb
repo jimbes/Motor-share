@@ -65,6 +65,7 @@
 
   "recordPermissionError": "Location permission is needed to record a ride.",
   "recordStartRide": "Start Ride",
+  "capturePhotoTooltip": "Take a photo",
   "recordingLabel": "RECORDING",
   "pausedLabel": "PAUSED",
   "statSpeed": "SPEED",
@@ -141,6 +142,13 @@
   "fieldYear": "Year",
   "fieldEngineCc": "Engine (cc)",
   "bikeBrandModelRequired": "Brand and model are required.",
+
+  "photosTitle": "Photos",
+  "photosViewGrid": "Grid",
+  "photosViewMap": "Map",
+  "photosEmpty": "No photos yet. Take some during your next ride!",
+  "photosLoadError": "Could not load your photos.",
+  "photosMapEmpty": "None of your photos have location data yet.",
 
   "apiErrorNetwork": "Could not reach the server. Check your connection and API URL.",
   "apiErrorGeneric": "Something went wrong. Please try again."

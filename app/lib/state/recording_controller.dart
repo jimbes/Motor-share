@@ -6,6 +6,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../core/format.dart';
+import '../core/models/captured_photo.dart';
 import '../core/models/track_point.dart';
 import 'recording_task_handler.dart';
 
@@ -28,6 +29,7 @@ class RecordingController extends ChangeNotifier {
 
   RecordingState state = RecordingState.idle;
   final List<TrackPoint> track = [];
+  final List<CapturedPhoto> photos = [];
 
   double distanceMeters = 0;
   double currentSpeedKmh = 0;
@@ -38,6 +40,7 @@ class RecordingController extends ChangeNotifier {
   StreamSubscription<Position>? _positionSub;
   Timer? _ticker;
   Position? _lastKept;
+  Position? _lastPosition;
   DateTime? _lastResumeTime;
   bool _serviceInitialized = false;
 
@@ -121,6 +124,8 @@ class RecordingController extends ChangeNotifier {
 
   void _onPosition(Position position) {
     if (position.accuracy > _minAccuracyMeters) return;
+
+    _lastPosition = position;
 
     if (_lastKept != null) {
       final segment = Geolocator.distanceBetween(
@@ -211,16 +216,26 @@ class RecordingController extends ChangeNotifier {
     return (distanceMeters / 1000) / hours;
   }
 
+  double? get lastLat => _lastPosition?.latitude;
+  double? get lastLng => _lastPosition?.longitude;
+
+  void addPhoto(CapturedPhoto photo) {
+    photos.add(photo);
+    notifyListeners();
+  }
+
   void reset() {
     _positionSub?.cancel();
     _ticker?.cancel();
     track.clear();
+    photos.clear();
     distanceMeters = 0;
     currentSpeedKmh = 0;
     maxSpeedKmh = 0;
     elapsed = Duration.zero;
     startedAt = null;
     _lastKept = null;
+    _lastPosition = null;
     _lastResumeTime = null;
     state = RecordingState.idle;
     notifyListeners();

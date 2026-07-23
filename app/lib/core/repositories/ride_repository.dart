@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 import '../api_client.dart';
+import '../models/my_photo.dart';
 import '../models/ride.dart';
 import '../models/ride_comment.dart';
 import '../models/rider_stats.dart';
@@ -12,6 +13,13 @@ class RideFeedPage {
   const RideFeedPage({required this.rides, required this.hasMorePages});
 
   final List<Ride> rides;
+  final bool hasMorePages;
+}
+
+class MyPhotosPage {
+  const MyPhotosPage({required this.photos, required this.hasMorePages});
+
+  final List<MyPhoto> photos;
   final bool hasMorePages;
 }
 
@@ -60,11 +68,23 @@ class RideRepository {
     return Ride.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<void> uploadPhoto(int rideId, File photo) async {
+  Future<void> uploadPhoto(int rideId, File photo, {double? lat, double? lng}) async {
     final formData = FormData.fromMap({
       'photo': await MultipartFile.fromFile(photo.path),
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
     });
     await _client.dio.post('/rides/$rideId/photos', data: formData);
+  }
+
+  Future<MyPhotosPage> myPhotos({int page = 1}) async {
+    final response = await _client.dio.get('/me/photos', queryParameters: {'page': page});
+    final data = response.data as Map<String, dynamic>;
+    final photos = (data['data'] as List<dynamic>).map((e) => MyPhoto.fromJson(e as Map<String, dynamic>)).toList();
+    final meta = data['meta'] as Map<String, dynamic>?;
+    final currentPage = meta?['current_page'] as int? ?? page;
+    final lastPage = meta?['last_page'] as int? ?? page;
+    return MyPhotosPage(photos: photos, hasMorePages: currentPage < lastPage);
   }
 
   Future<({int likesCount, bool likedByMe})> like(int rideId) async {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../core/format.dart';
+import '../core/models/captured_photo.dart';
 import '../core/speed_color.dart';
 import '../l10n/app_localizations.dart';
 import '../state/recording_controller.dart';
@@ -65,10 +67,17 @@ class _RecordScreenState extends State<RecordScreen> {
           avgSpeedKmh: _controller.avgSpeedKmh,
           maxSpeedKmh: _controller.maxSpeedKmh,
           track: List.of(_controller.track),
+          initialPhotos: List.of(_controller.photos),
         ),
       ),
     );
     _controller.reset();
+  }
+
+  Future<void> _capturePhoto() async {
+    final photo = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (photo == null) return;
+    _controller.addPhoto(CapturedPhoto(file: photo, lat: _controller.lastLat, lng: _controller.lastLng));
   }
 
   @override
@@ -140,6 +149,7 @@ class _RecordScreenState extends State<RecordScreen> {
                 controller: _controller,
                 onPauseResume: () => setState(() => isPaused ? _controller.resume() : _controller.pause()),
                 onStop: _stopAndSave,
+                onCapturePhoto: _capturePhoto,
               ),
             ),
         ],
@@ -176,11 +186,17 @@ class _RecordingPill extends StatelessWidget {
 }
 
 class _StatSheet extends StatelessWidget {
-  const _StatSheet({required this.controller, required this.onPauseResume, required this.onStop});
+  const _StatSheet({
+    required this.controller,
+    required this.onPauseResume,
+    required this.onStop,
+    required this.onCapturePhoto,
+  });
 
   final RecordingController controller;
   final VoidCallback onPauseResume;
   final VoidCallback onStop;
+  final VoidCallback onCapturePhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +224,37 @@ class _StatSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              GestureDetector(
+                onTap: onCapturePhoto,
+                child: Tooltip(
+                  message: l10n.capturePhotoTooltip,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(color: RedlColors.surface2, shape: BoxShape.circle),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(Icons.camera_alt_outlined, color: RedlColors.baseAlt, size: 22),
+                        if (controller.photos.isNotEmpty)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: const BoxDecoration(color: RedlColors.accent, shape: BoxShape.circle),
+                              child: Text(
+                                '${controller.photos.length}',
+                                style: RedlText.body(fontSize: 9, color: RedlColors.baseAlt),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(child: RedlSecondaryButton(label: isPaused ? l10n.actionResume : l10n.actionPause, onPressed: onPauseResume)),
               const SizedBox(width: 12),
               GestureDetector(
