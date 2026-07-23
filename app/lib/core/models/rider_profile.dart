@@ -11,6 +11,7 @@ class RiderProfile {
     required this.followersCount,
     required this.followingCount,
     required this.isFollowing,
+    this.isFriends = false,
   });
 
   final int id;
@@ -24,9 +25,13 @@ class RiderProfile {
   final int followingCount;
   final bool isFollowing;
 
+  /// True once both riders follow each other back - only friends' rides
+  /// are shared, so this is what actually unlocks their ride history.
+  final bool isFriends;
+
   double get distanceKm => distanceMeters / 1000;
 
-  RiderProfile copyWith({bool? isFollowing, int? followersCount}) {
+  RiderProfile copyWith({bool? isFollowing, int? followersCount, bool? isFriends}) {
     return RiderProfile(
       id: id,
       name: name,
@@ -38,6 +43,7 @@ class RiderProfile {
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount,
       isFollowing: isFollowing ?? this.isFollowing,
+      isFriends: isFriends ?? this.isFriends,
     );
   }
 
@@ -53,6 +59,7 @@ class RiderProfile {
       followersCount: json['followers_count'] as int? ?? 0,
       followingCount: json['following_count'] as int? ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,
+      isFriends: json['is_friends'] as bool? ?? false,
     );
   }
 }

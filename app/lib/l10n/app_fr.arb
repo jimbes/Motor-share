@@ -69,6 +69,7 @@
 
   "rideNotFound": "Trajet introuvable.",
   "rideLoadError": "Impossible de charger ce trajet.",
+  "ridePrivateError": "Ce trajet est privé. Suivez-vous mutuellement pour le voir.",
   "commentsLabel": "COMMENTAIRES",
   "addCommentHint": "Ajouter un commentaire...",
   "withRiders": "avec {names}",
@@ -135,6 +136,8 @@
   "feedScopeFollowing": "Suivis",
   "feedScopeEveryone": "Tout le monde",
   "feedFollowingEmpty": "Aucun trajet des motards que vous suivez. Trouvez des motards à suivre !",
+  "friendsBadgeLabel": "Amis - vous voyez vos trajets respectifs",
+  "awaitingFollowBackLabel": "En attente que cette personne vous suive en retour pour voir ses trajets",
 
   "addBikePhotoLabel": "Ajouter une photo",
   "changeBikePhotoLabel": "Changer la photo",

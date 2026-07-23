@@ -102,12 +102,24 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     final profile = _profile;
     if (profile == null || _togglingFollow) return;
 
+    final becameFriends = !profile.isFriends;
     setState(() => _togglingFollow = true);
     try {
       final repo = context.read<UserRepository>();
       final result = profile.isFollowing ? await repo.unfollow(profile.username) : await repo.follow(profile.username);
       if (mounted) {
-        setState(() => _profile = profile.copyWith(isFollowing: result.isFollowing, followersCount: result.followersCount));
+        setState(() {
+          _profile = profile.copyWith(
+            isFollowing: result.isFollowing,
+            followersCount: result.followersCount,
+            isFriends: result.isFriends,
+          );
+        });
+      }
+      // Following back just unlocked their rides - reload to show them
+      // instead of waiting for a manual pull-to-refresh.
+      if (result.isFriends && becameFriends && mounted) {
+        await _load();
       }
     } catch (_) {
       // Ignore - the button stays as-is, user can retry.
@@ -180,6 +192,25 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                         _profile!.isFollowing
                             ? RedlSecondaryButton(label: l10n.actionFollowing, onPressed: _togglingFollow ? null : _toggleFollow)
                             : RedlPrimaryButton(label: l10n.actionFollow, onPressed: _toggleFollow, loading: _togglingFollow),
+                        if (_profile!.isFollowing) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                _profile!.isFriends ? Icons.people_alt_rounded : Icons.hourglass_top_rounded,
+                                size: 14,
+                                color: RedlColors.textSecondary,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _profile!.isFriends ? l10n.friendsBadgeLabel : l10n.awaitingFollowBackLabel,
+                                  style: RedlText.meta(color: RedlColors.textSecondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         Container(
                           decoration: const BoxDecoration(

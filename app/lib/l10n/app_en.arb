@@ -94,6 +94,7 @@
 
   "rideNotFound": "Ride not found.",
   "rideLoadError": "Could not load this ride.",
+  "ridePrivateError": "This ride is private. Follow each other to see it.",
   "commentsLabel": "COMMENTS",
   "addCommentHint": "Add a comment...",
   "withRiders": "with {names}",
@@ -197,6 +198,8 @@
   "feedScopeFollowing": "Following",
   "feedScopeEveryone": "Everyone",
   "feedFollowingEmpty": "No rides from riders you follow yet. Find riders to follow!",
+  "friendsBadgeLabel": "Friends - you can see each other's rides",
+  "awaitingFollowBackLabel": "Waiting for them to follow back to see their rides",
 
   "addBikePhotoLabel": "Add Photo",
   "changeBikePhotoLabel": "Change Photo",

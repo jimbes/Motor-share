@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -135,8 +136,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     try {
       final ride = await context.read<RideRepository>().show(widget.rideId!);
       if (mounted) setState(() => _ride = ride);
-    } catch (_) {
-      if (mounted) setState(() => _loadError = AppLocalizations.of(context)!.rideLoadError);
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final isPrivate = e is DioException && e.response?.statusCode == 403;
+      setState(() => _loadError = isPrivate ? l10n.ridePrivateError : l10n.rideLoadError);
     } finally {
       if (mounted) setState(() => _loadingRide = false);
     }

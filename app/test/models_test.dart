@@ -112,6 +112,7 @@ void main() {
       expect(profile.distanceKm, 12.0);
       expect(profile.memberSince.year, 2025);
       expect(profile.isFollowing, isFalse);
+      expect(profile.isFriends, isFalse);
     });
 
     test('parses follow state and counts when present', () {
@@ -131,6 +132,20 @@ void main() {
       expect(profile.isFollowing, isTrue);
     });
 
+    test('parses is_friends when present', () {
+      final profile = RiderProfile.fromJson({
+        'id': 1,
+        'name': 'Marco',
+        'username': 'marco_rides',
+        'member_since': '2025-01-01T00:00:00Z',
+        'rides_count': 4,
+        'distance_meters': 12000,
+        'is_following': true,
+        'is_friends': true,
+      });
+      expect(profile.isFriends, isTrue);
+    });
+
     test('copyWith updates follow state without losing other fields', () {
       final profile = RiderProfile.fromJson({
         'id': 1,
@@ -142,9 +157,10 @@ void main() {
         'followers_count': 9,
         'is_following': false,
       });
-      final followed = profile.copyWith(isFollowing: true, followersCount: 10);
+      final followed = profile.copyWith(isFollowing: true, followersCount: 10, isFriends: true);
       expect(followed.isFollowing, isTrue);
       expect(followed.followersCount, 10);
+      expect(followed.isFriends, isTrue);
       expect(followed.name, 'Marco');
     });
   });

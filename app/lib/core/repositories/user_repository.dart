@@ -17,13 +17,21 @@ class UserRepository {
     return RiderProfile.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<({bool isFollowing, int followersCount})> follow(String username) async {
+  Future<({bool isFollowing, int followersCount, bool isFriends})> follow(String username) async {
     final response = await _client.dio.post('/users/$username/follow');
-    return (isFollowing: response.data['is_following'] as bool, followersCount: response.data['followers_count'] as int);
+    return (
+      isFollowing: response.data['is_following'] as bool,
+      followersCount: response.data['followers_count'] as int,
+      isFriends: response.data['is_friends'] as bool? ?? false,
+    );
   }
 
-  Future<({bool isFollowing, int followersCount})> unfollow(String username) async {
+  Future<({bool isFollowing, int followersCount, bool isFriends})> unfollow(String username) async {
     final response = await _client.dio.delete('/users/$username/follow');
-    return (isFollowing: response.data['is_following'] as bool, followersCount: response.data['followers_count'] as int);
+    return (
+      isFollowing: response.data['is_following'] as bool,
+      followersCount: response.data['followers_count'] as int,
+      isFriends: response.data['is_friends'] as bool? ?? false,
+    );
   }
 }
