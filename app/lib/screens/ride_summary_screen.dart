@@ -154,7 +154,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   }
 
   Future<void> _addCompanion() async {
-    final rider = await showRiderPicker(context);
+    final rider = await showRiderPicker(context, friendsOnly: true);
     if (rider == null || !mounted) return;
     if (_selectedCompanions.any((r) => r.id == rider.id)) return;
     setState(() => _selectedCompanions.add(rider));

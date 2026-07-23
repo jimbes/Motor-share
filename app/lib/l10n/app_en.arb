@@ -177,6 +177,7 @@
   "searchHint": "Search by username or name",
   "searchPrompt": "Search for riders by username or name.",
   "searchEmpty": "No riders found.",
+  "companionPickerFriendsOnlyHint": "You can only tag friends - people who follow you back.",
   "riderProfileLoadError": "Could not load this rider's profile.",
   "noUsername": "No username set",
 

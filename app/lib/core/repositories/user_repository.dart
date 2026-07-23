@@ -7,8 +7,11 @@ class UserRepository {
 
   final ApiClient _client;
 
-  Future<List<UserSummary>> search(String query) async {
-    final response = await _client.dio.get('/users/search', queryParameters: {'q': query});
+  Future<List<UserSummary>> search(String query, {bool friendsOnly = false}) async {
+    final response = await _client.dio.get('/users/search', queryParameters: {
+      'q': query,
+      if (friendsOnly) 'scope': 'friends',
+    });
     return (response.data as List<dynamic>).map((e) => UserSummary.fromJson(e as Map<String, dynamic>)).toList();
   }
 

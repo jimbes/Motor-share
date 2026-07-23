@@ -125,6 +125,7 @@
   "searchHint": "Rechercher par pseudo ou nom",
   "searchPrompt": "Recherchez des motards par pseudo ou par nom.",
   "searchEmpty": "Aucun motard trouvé.",
+  "companionPickerFriendsOnlyHint": "Vous ne pouvez taguer que des amis - des personnes qui vous suivent en retour.",
   "riderProfileLoadError": "Impossible de charger le profil de ce motard.",
   "noUsername": "Aucun pseudo défini",
 

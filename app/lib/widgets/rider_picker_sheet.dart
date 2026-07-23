@@ -12,18 +12,23 @@ import '../theme/redl_text_styles.dart';
 
 /// Presents a searchable rider picker as a modal bottom sheet.
 /// Returns the selected [UserSummary], or null if dismissed.
-Future<UserSummary?> showRiderPicker(BuildContext context) {
+///
+/// [friendsOnly] narrows the search to the caller's mutual-follow friends -
+/// used for ride-companion tagging, since only friends can be tagged.
+Future<UserSummary?> showRiderPicker(BuildContext context, {bool friendsOnly = false}) {
   return showModalBottomSheet<UserSummary>(
     context: context,
     isScrollControlled: true,
     backgroundColor: RedlColors.surface1,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-    builder: (_) => const _RiderPickerSheet(),
+    builder: (_) => _RiderPickerSheet(friendsOnly: friendsOnly),
   );
 }
 
 class _RiderPickerSheet extends StatefulWidget {
-  const _RiderPickerSheet();
+  const _RiderPickerSheet({required this.friendsOnly});
+
+  final bool friendsOnly;
 
   @override
   State<_RiderPickerSheet> createState() => _RiderPickerSheetState();
@@ -55,7 +60,7 @@ class _RiderPickerSheetState extends State<_RiderPickerSheet> {
   Future<void> _search(String query) async {
     setState(() => _loading = true);
     try {
-      final results = await context.read<UserRepository>().search(query);
+      final results = await context.read<UserRepository>().search(query, friendsOnly: widget.friendsOnly);
       if (mounted) setState(() => _results = results);
     } catch (_) {
       if (mounted) setState(() => _results = []);
@@ -89,9 +94,15 @@ class _RiderPickerSheetState extends State<_RiderPickerSheet> {
                     ? const Center(child: CircularProgressIndicator(color: RedlColors.accent))
                     : _results.isEmpty
                         ? Center(
-                            child: Text(
-                              _controller.text.trim().isEmpty ? l10n.searchPrompt : l10n.searchEmpty,
-                              style: RedlText.body(color: RedlColors.textSecondary),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: RedlSpacing.screenPadding),
+                              child: Text(
+                                _controller.text.trim().isEmpty
+                                    ? (widget.friendsOnly ? l10n.companionPickerFriendsOnlyHint : l10n.searchPrompt)
+                                    : l10n.searchEmpty,
+                                textAlign: TextAlign.center,
+                                style: RedlText.body(color: RedlColors.textSecondary),
+                              ),
                             ),
                           )
                         : ListView.builder(
