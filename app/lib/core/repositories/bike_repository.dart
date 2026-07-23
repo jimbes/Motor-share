@@ -31,5 +31,10 @@ class BikeRepository {
     return Bike.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<Bike> setDefault(int id) async {
+    final response = await _client.dio.post('/bikes/$id/default');
+    return Bike.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> delete(int id) => _client.dio.delete('/bikes/$id');
 }

@@ -32,6 +32,16 @@ void main() {
       final bike = Bike.fromJson({'id': 1, 'brand': 'Ducati', 'model': 'Monster', 'photo_url': 'https://example.com/bike.jpg'});
       expect(bike.photoUrl, 'https://example.com/bike.jpg');
     });
+
+    test('isDefault defaults to false when absent', () {
+      final bike = Bike.fromJson({'id': 1, 'brand': 'Ducati', 'model': 'Monster'});
+      expect(bike.isDefault, isFalse);
+    });
+
+    test('parses isDefault when true', () {
+      final bike = Bike.fromJson({'id': 1, 'brand': 'Ducati', 'model': 'Monster', 'is_default': true});
+      expect(bike.isDefault, isTrue);
+    });
   });
 
   group('AppUser', () {

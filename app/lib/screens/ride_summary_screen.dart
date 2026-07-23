@@ -112,7 +112,13 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   Future<void> _loadBikes() async {
     try {
       final bikes = await context.read<BikeRepository>().list();
-      if (mounted) setState(() => _bikes = bikes);
+      if (mounted) {
+        setState(() {
+          _bikes = bikes;
+          final defaultBikes = bikes.where((b) => b.isDefault);
+          _selectedBike = defaultBikes.isEmpty ? null : defaultBikes.first;
+        });
+      }
     } catch (_) {
       // Non-fatal - the rider can still save without picking a bike.
     }

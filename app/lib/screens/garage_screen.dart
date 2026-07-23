@@ -46,6 +46,16 @@ class _GarageScreenState extends State<GarageScreen> {
     if (saved != null) _load();
   }
 
+  Future<void> _setDefault(Bike bike) async {
+    if (bike.isDefault) return;
+    try {
+      await context.read<BikeRepository>().setDefault(bike.id);
+      _load();
+    } catch (_) {
+      // Ignore - the bike list stays as-is, user can retry.
+    }
+  }
+
   Future<void> _deleteBike(Bike bike) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -125,7 +135,22 @@ class _GarageScreenState extends State<GarageScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(bike.displayName, style: RedlText.title(fontSize: 14)),
+                                      Row(
+                                        children: [
+                                          Flexible(child: Text(bike.displayName, style: RedlText.title(fontSize: 14))),
+                                          if (bike.isDefault) ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: RedlColors.accent.withValues(alpha: 0.18),
+                                                borderRadius: BorderRadius.circular(RedlRadius.sm),
+                                              ),
+                                              child: Text(l10n.defaultBikeLabel, style: RedlText.eyebrow(fontSize: 8, color: RedlColors.accent)),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
                                       const SizedBox(height: 3),
                                       Text(
                                         [
@@ -136,6 +161,15 @@ class _GarageScreenState extends State<GarageScreen> {
                                         style: RedlText.meta(fontSize: 11),
                                       ),
                                     ],
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => _setDefault(bike),
+                                  tooltip: l10n.setAsDefaultTooltip,
+                                  icon: Icon(
+                                    bike.isDefault ? Icons.star : Icons.star_border,
+                                    size: 18,
+                                    color: bike.isDefault ? RedlColors.accent : RedlColors.textSecondary,
                                   ),
                                 ),
                                 IconButton(

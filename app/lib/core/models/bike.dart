@@ -7,6 +7,7 @@ class Bike {
     this.nickname,
     this.engineCc,
     this.photoUrl,
+    this.isDefault = false,
   });
 
   final int id;
@@ -16,6 +17,7 @@ class Bike {
   final String? nickname;
   final int? engineCc;
   final String? photoUrl;
+  final bool isDefault;
 
   String get displayName => nickname?.isNotEmpty == true ? nickname! : '$brand $model';
 
@@ -28,6 +30,7 @@ class Bike {
       nickname: json['nickname'] as String?,
       engineCc: json['engine_cc'] as int?,
       photoUrl: json['photo_url'] as String?,
+      isDefault: json['is_default'] as bool? ?? false,
     );
   }
 

@@ -57,6 +57,29 @@ class _RecordScreenState extends State<RecordScreen> {
 
   Future<void> _stopAndSave() async {
     _controller.stop();
+
+    // The backend needs at least 2 GPS points to draw a route - a ride with
+    // no detected movement (e.g. stopped immediately, or GPS never got a
+    // fix) can't be saved. Catch that here with a clear message instead of
+    // letting the rider fill out the whole save form only to hit a raw
+    // validation error from the API.
+    if (_controller.track.length < 2) {
+      final l10n = AppLocalizations.of(context)!;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: RedlColors.surface2,
+          title: Text(l10n.noMovementTitle, style: RedlText.title(fontSize: 15)),
+          content: Text(l10n.noMovementMessage, style: RedlText.body(fontSize: 13)),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.actionOk)),
+          ],
+        ),
+      );
+      _controller.reset();
+      return;
+    }
+
     final navigator = Navigator.of(context);
     await navigator.push(
       MaterialPageRoute(

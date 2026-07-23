@@ -66,6 +66,9 @@
   "recordPermissionError": "Location permission is needed to record a ride.",
   "recordStartRide": "Start Ride",
   "capturePhotoTooltip": "Take a photo",
+  "noMovementTitle": "No Movement Detected",
+  "noMovementMessage": "This ride doesn't have enough GPS movement to save. Make sure location is working and try recording for longer.",
+  "actionOk": "OK",
   "recordingLabel": "RECORDING",
   "pausedLabel": "PAUSED",
   "statSpeed": "SPEED",
@@ -141,6 +144,8 @@
   "fieldNicknameOptional": "Nickname (optional)",
   "fieldYear": "Year",
   "fieldEngineCc": "Engine (cc)",
+  "defaultBikeLabel": "DEFAULT",
+  "setAsDefaultTooltip": "Set as default",
   "bikeBrandModelRequired": "Brand and model are required.",
 
   "photosTitle": "Photos",

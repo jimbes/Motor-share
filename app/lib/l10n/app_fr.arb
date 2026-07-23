@@ -41,6 +41,9 @@
   "recordPermissionError": "L'autorisation de localisation est nécessaire pour enregistrer un trajet.",
   "recordStartRide": "Démarrer",
   "capturePhotoTooltip": "Prendre une photo",
+  "noMovementTitle": "Aucun déplacement détecté",
+  "noMovementMessage": "Ce trajet n'a pas assez de mouvement GPS pour être enregistré. Vérifiez que la localisation fonctionne et essayez d'enregistrer plus longtemps.",
+  "actionOk": "OK",
   "recordingLabel": "ENREGISTREMENT",
   "pausedLabel": "EN PAUSE",
   "statSpeed": "VITESSE",
@@ -94,6 +97,8 @@
   "fieldNicknameOptional": "Surnom (optionnel)",
   "fieldYear": "Année",
   "fieldEngineCc": "Cylindrée (cc)",
+  "defaultBikeLabel": "PAR DÉFAUT",
+  "setAsDefaultTooltip": "Définir par défaut",
   "bikeBrandModelRequired": "La marque et le modèle sont requis.",
 
   "photosTitle": "Photos",
