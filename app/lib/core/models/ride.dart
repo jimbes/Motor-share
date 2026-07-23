@@ -1,5 +1,6 @@
 import 'ride_comment.dart';
 import 'ride_photo.dart';
+import 'speeding_event.dart';
 import 'track_point.dart';
 
 class RideAuthor {
@@ -45,6 +46,8 @@ class Ride {
     required this.distanceMeters,
     required this.avgSpeedKmh,
     required this.maxSpeedKmh,
+    this.speedScore,
+    this.speedingEvents,
     required this.user,
     this.bike,
     this.polyline = const [],
@@ -64,6 +67,8 @@ class Ride {
   final int distanceMeters;
   final double avgSpeedKmh;
   final double maxSpeedKmh;
+  final int? speedScore;
+  final List<SpeedingEvent>? speedingEvents;
   final RideAuthor user;
   final RideBikeSummary? bike;
   final List<TrackPoint> polyline;
@@ -92,6 +97,8 @@ class Ride {
       distanceMeters: distanceMeters,
       avgSpeedKmh: avgSpeedKmh,
       maxSpeedKmh: maxSpeedKmh,
+      speedScore: speedScore,
+      speedingEvents: speedingEvents,
       user: user,
       bike: bike,
       polyline: polyline,
@@ -114,6 +121,10 @@ class Ride {
       distanceMeters: json['distance_meters'] as int,
       avgSpeedKmh: double.parse(json['avg_speed_kmh'].toString()),
       maxSpeedKmh: double.parse(json['max_speed_kmh'].toString()),
+      speedScore: json['speed_score'] as int?,
+      speedingEvents: (json['speeding_events'] as List<dynamic>?)
+          ?.map((e) => SpeedingEvent.fromJson(e as Map<String, dynamic>))
+          .toList(),
       user: RideAuthor.fromJson(json['user'] as Map<String, dynamic>),
       bike: json['bike'] != null ? RideBikeSummary.fromJson(json['bike'] as Map<String, dynamic>) : null,
       polyline: (json['polyline'] as List<dynamic>? ?? [])

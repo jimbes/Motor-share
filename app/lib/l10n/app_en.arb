@@ -91,6 +91,25 @@
   "commentsLabel": "COMMENTS",
   "addCommentHint": "Add a comment...",
 
+  "speedScoreLabel": "SPEED SCORE",
+  "speedScoreCaption": "Based on posted speed limits along your route.",
+  "speedScoreNoData": "No speed limit data for this route.",
+  "speedingEventsLabel": "SPEEDING",
+  "speedingEventsCount": "{count, plural, =0{No speeding detected} =1{1 speeding event} other{{count} speeding events}}",
+  "@speedingEventsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "speedingEventDetail": "{limit} zone — peaked at {max} for {duration}",
+  "@speedingEventDetail": {
+    "placeholders": {
+      "limit": {"type": "String"},
+      "max": {"type": "String"},
+      "duration": {"type": "String"}
+    }
+  },
+
   "garageTitle": "Garage",
   "removeBikeTitle": "Remove {name}?",
   "@removeBikeTitle": {

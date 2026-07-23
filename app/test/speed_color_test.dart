@@ -27,6 +27,25 @@ void main() {
     });
   });
 
+  group('scoreToColor', () {
+    test('is red at a score of zero', () {
+      expect(HSVColor.fromColor(scoreToColor(0)).hue, closeTo(0, 0.1));
+    });
+
+    test('is green at a perfect score of 100', () {
+      expect(HSVColor.fromColor(scoreToColor(100)).hue, closeTo(120, 0.1));
+    });
+
+    test('is at the yellow midpoint at 50', () {
+      expect(HSVColor.fromColor(scoreToColor(50)).hue, closeTo(60, 0.1));
+    });
+
+    test('clamps out-of-range scores', () {
+      expect(HSVColor.fromColor(scoreToColor(-10)).hue, closeTo(0, 0.1));
+      expect(HSVColor.fromColor(scoreToColor(150)).hue, closeTo(120, 0.1));
+    });
+  });
+
   group('speedColoredSegments', () {
     TrackPoint p(double lat, double lng, double speed) => TrackPoint(lat: lat, lng: lng, speed: speed);
 

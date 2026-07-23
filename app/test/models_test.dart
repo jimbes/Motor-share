@@ -79,6 +79,33 @@ void main() {
       expect(liked.likesCount, 2);
       expect(liked.title, ride.title);
     });
+
+    test('speedScore and speedingEvents default to null when absent (older rides)', () {
+      final ride = Ride.fromJson(sampleJson());
+      expect(ride.speedScore, isNull);
+      expect(ride.speedingEvents, isNull);
+    });
+
+    test('parses speedScore and speedingEvents when present', () {
+      final json = sampleJson()
+        ..['speed_score'] = 72
+        ..['speeding_events'] = [
+          {
+            'started_at': '2026-01-01T10:05:00Z',
+            'duration_seconds': 12,
+            'limit_kmh': 50,
+            'max_speed_kmh': 78.5,
+            'excess_kmh': 28.5,
+          },
+        ];
+      final ride = Ride.fromJson(json);
+
+      expect(ride.speedScore, 72);
+      expect(ride.speedingEvents, hasLength(1));
+      expect(ride.speedingEvents!.first.limitKmh, 50.0);
+      expect(ride.speedingEvents!.first.maxSpeedKmh, 78.5);
+      expect(ride.speedingEvents!.first.durationSeconds, 12);
+    });
   });
 
   group('RiderStats', () {

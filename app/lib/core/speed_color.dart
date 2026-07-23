@@ -15,6 +15,13 @@ Color speedToColor(double speedKmh, double avgSpeedKmh) {
   return HSVColor.fromAHSV(1.0, hue, 0.75, 0.85).toColor();
 }
 
+/// Same red->green heat-map used for [speedToColor], applied to a 0-100
+/// speeding score instead of a speed ratio (0=red, 100=green).
+Color scoreToColor(int score) {
+  final hue = (score.clamp(0, 100) / 100.0) * 120.0;
+  return HSVColor.fromAHSV(1.0, hue, 0.75, 0.85).toColor();
+}
+
 /// Splits a route into one short [Polyline] per segment, each colored by
 /// that segment's speed relative to [avgSpeedKmh]. Falls back to a single
 /// flat-colored polyline when there's no usable speed data.

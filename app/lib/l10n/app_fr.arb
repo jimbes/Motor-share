@@ -66,6 +66,13 @@
   "commentsLabel": "COMMENTAIRES",
   "addCommentHint": "Ajouter un commentaire...",
 
+  "speedScoreLabel": "SCORE DE VITESSE",
+  "speedScoreCaption": "Basé sur les limitations de vitesse affichées sur votre trajet.",
+  "speedScoreNoData": "Aucune donnée de limitation pour ce trajet.",
+  "speedingEventsLabel": "EXCÈS DE VITESSE",
+  "speedingEventsCount": "{count, plural, =0{Aucun excès détecté} =1{1 excès de vitesse} other{{count} excès de vitesse}}",
+  "speedingEventDetail": "Zone {limit} — pointe à {max} pendant {duration}",
+
   "garageTitle": "Garage",
   "removeBikeTitle": "Supprimer {name} ?",
   "removeBikeContent": "Cela ne supprimera pas les trajets déjà enregistrés avec cette moto.",

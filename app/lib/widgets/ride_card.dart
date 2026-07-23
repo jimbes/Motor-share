@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/models/ride.dart';
+import '../core/speed_color.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
@@ -35,7 +36,15 @@ class RideCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(ride.title, style: RedlText.title(fontSize: 13)),
+                  Row(
+                    children: [
+                      Expanded(child: Text(ride.title, style: RedlText.title(fontSize: 13))),
+                      if (ride.speedScore != null) ...[
+                        const SizedBox(width: 8),
+                        _ScoreBadge(score: ride.speedScore!, label: l10n.speedScoreLabel),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${ride.user.name} · ${formatRelativeDate(context, ride.startedAt)}',
@@ -80,6 +89,26 @@ class RideCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ScoreBadge extends StatelessWidget {
+  const _ScoreBadge({required this.score, required this.label});
+
+  final int score;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = scoreToColor(score);
+    return Tooltip(
+      message: '$label: $score',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(RedlRadius.sm)),
+        child: Text('$score', style: RedlText.title(fontSize: 12, color: color)),
       ),
     );
   }

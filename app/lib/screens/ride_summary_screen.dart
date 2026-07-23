@@ -9,9 +9,11 @@ import '../core/format.dart';
 import '../core/models/bike.dart';
 import '../core/models/ride.dart';
 import '../core/models/ride_comment.dart';
+import '../core/models/speeding_event.dart';
 import '../core/models/track_point.dart';
 import '../core/repositories/bike_repository.dart';
 import '../core/repositories/ride_repository.dart';
+import '../core/speed_color.dart';
 import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
 import '../theme/redl_colors.dart';
@@ -160,7 +162,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         await repo.uploadPhoto(ride.id, File(photo.path));
       }
 
-      if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+      if (mounted) {
+        final navigator = Navigator.of(context);
+        navigator.popUntil((route) => route.isFirst);
+        navigator.push(MaterialPageRoute(builder: (_) => RideSummaryScreen.view(rideId: ride.id)));
+      }
     } catch (e) {
       if (mounted) setState(() => _saveError = apiErrorMessage(context, e));
     } finally {
@@ -367,6 +373,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                 maxSpeedKmh: ride.maxSpeedKmh,
                 elevationMeters: elevation,
               ),
+              const SizedBox(height: 20),
+              _SpeedScoreCard(score: ride.speedScore, events: ride.speedingEvents ?? const []),
               if (ride.description != null && ride.description!.isNotEmpty) ...[
                 const SizedBox(height: 20),
                 Text(ride.description!, style: RedlText.body(color: RedlColors.textSecondary)),
@@ -519,6 +527,72 @@ class _StatGrid extends StatelessWidget {
                 ),
               ))
           .toList(),
+    );
+  }
+}
+
+class _SpeedScoreCard extends StatelessWidget {
+  const _SpeedScoreCard({required this.score, required this.events});
+
+  final int? score;
+  final List<SpeedingEvent> events;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: RedlColors.surface2, borderRadius: BorderRadius.circular(RedlRadius.sm)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.speedScoreLabel, style: RedlText.eyebrow(fontSize: 9)),
+                    const SizedBox(height: 6),
+                    Text(
+                      score != null ? '$score' : '—',
+                      style: RedlText.statValue(
+                        fontSize: 26,
+                        color: score != null ? scoreToColor(score!) : RedlColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      score != null ? l10n.speedScoreCaption : l10n.speedScoreNoData,
+                      style: RedlText.body(fontSize: 11, color: RedlColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (events.isNotEmpty) ...[
+            const Divider(height: 24),
+            Text(l10n.speedingEventsLabel, style: RedlText.eyebrow(fontSize: 9)),
+            const SizedBox(height: 4),
+            Text(l10n.speedingEventsCount(events.length), style: RedlText.body(fontSize: 12)),
+            const SizedBox(height: 10),
+            ...events.map((event) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    l10n.speedingEventDetail(
+                      formatSpeedKmh(event.limitKmh),
+                      formatSpeedKmh(event.maxSpeedKmh),
+                      formatDuration(Duration(seconds: event.durationSeconds)),
+                    ),
+                    style: RedlText.body(fontSize: 12, color: RedlColors.textSecondary),
+                  ),
+                )),
+          ],
+        ],
+      ),
     );
   }
 }
