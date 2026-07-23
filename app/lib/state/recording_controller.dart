@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 
 import '../core/models/track_point.dart';
 
@@ -39,6 +40,16 @@ class RecordingController extends ChangeNotifier {
     if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
       return false;
     }
+
+    // Android 13+ requires this to be granted for the foreground-service
+    // notification (the thing that keeps GPS recording alive with the
+    // screen locked) to actually display and persist. Best-effort: a
+    // denial here doesn't block recording, it just makes the OS more
+    // likely to eventually kill the background service.
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await ph.Permission.notification.request();
+    }
+
     return await Geolocator.isLocationServiceEnabled();
   }
 
