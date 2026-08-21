@@ -11,8 +11,10 @@ import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
 import '../widgets/ride_card.dart';
+import 'poi_map_screen.dart';
 import 'ride_summary_screen.dart';
 import 'search_screen.dart';
+import 'territory_map_screen.dart';
 
 enum _FeedScope { following, everyone }
 
@@ -172,6 +174,28 @@ class _FeedScreenState extends State<FeedScreen> with RouteAware {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(l10n.feedGreeting(user?.name.split(' ').first ?? ''), style: RedlText.title(fontSize: 14)),
+                            ),
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PoiMapScreen())),
+                              child: const Padding(
+                                padding: EdgeInsets.only(right: 10),
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: RedlColors.surface4,
+                                  child: Icon(Icons.place_outlined, size: 16, color: RedlColors.baseAlt),
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TerritoryMapScreen())),
+                              child: const Padding(
+                                padding: EdgeInsets.only(right: 10),
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: RedlColors.surface4,
+                                  child: Icon(Icons.hexagon_outlined, size: 16, color: RedlColors.baseAlt),
+                                ),
+                              ),
                             ),
                             GestureDetector(
                               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SearchScreen())),
