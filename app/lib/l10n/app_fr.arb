@@ -144,5 +144,93 @@
   "changeBikePhotoLabel": "Changer la photo",
 
   "apiErrorNetwork": "Impossible de joindre le serveur. Vérifiez votre connexion et l'URL de l'API.",
-  "apiErrorGeneric": "Une erreur s'est produite. Veuillez réessayer."
+  "apiErrorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+
+  "recordAddPoi": "Ajouter un point de vue",
+  "poiFormTitle": "Nouveau point de vue",
+  "poiFormTitleFieldLabel": "Titre (optionnel)",
+  "poiFormAdd": "Ajouter",
+  "discardRideTitle": "Abandonner la sortie ?",
+  "discardRideMessage": "Cette sortie n'a pas encore été enregistrée. Si vous quittez maintenant, elle sera abandonnée.",
+  "discardRideConfirm": "Abandonner",
+
+  "viewDetailedStatsAction": "Voir toutes les statistiques",
+  "xpGainedLabel": "XP GAGNÉ",
+  "levelLabel": "NIVEAU",
+  "leveledUpMessage": "Niveau supérieur ! Vous avez atteint le niveau {level}.",
+  "@leveledUpMessage": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "territoriesTouchedMessage": "{count, plural, =1{1 territoire touché pendant cette sortie} other{{count} territoires touchés pendant cette sortie}}",
+  "@territoriesTouchedMessage": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "newBadgesLabel": "NOUVEAUX BADGES",
+  "rideScoreLabel": "RIDE SCORE",
+  "poiSectionLabel": "POINTS DE VUE",
+
+  "detailedStatsTitle": "Statistiques",
+  "shareStatsAction": "Partager mes stats",
+  "statsCourseSectionLabel": "PARCOURS",
+  "statsRidingStyleSectionLabel": "STYLE DE CONDUITE",
+  "statElevationGain": "DÉNIVELÉ POSITIF",
+  "statElevationLoss": "DÉNIVELÉ NÉGATIF",
+  "statMovingTime": "TEMPS EN MOUVEMENT",
+  "statStoppedTime": "TEMPS À L'ARRÊT",
+  "statMaxSpeed": "VITESSE MAX",
+  "statMaxLeanAngle": "ANGLE D'INCLINAISON MAX",
+  "statMaxBrakeG": "FREINAGE MAX",
+  "statMaxAccelG": "ACCÉLÉRATION MAX",
+  "statMaxLateralG": "FORCE G MAX",
+  "sensorsDisabledHint": "Active les capteurs au prochain enregistrement pour voir ces statistiques.",
+  "sensorsSettingsLinkAction": "Aller aux réglages des capteurs",
+
+  "territoryMapTitle": "Territoires",
+  "territoriesOwnedCountLabel": "{count, plural, =0{0 zones possédées} =1{1 zone possédée} other{{count} zones possédées}}",
+  "@territoriesOwnedCountLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "territoryLegendMine": "Moi",
+  "territoryLegendOthers": "Autres",
+  "territoryLegendFree": "Libre",
+  "territorySheetFreeLabel": "Zone libre",
+  "territorySheetOwnerLabel": "Propriétaire",
+  "territorySheetInfluenceLabel": "Distance cumulée (30 jours)",
+  "recenterOnMyTerritoriesTooltip": "Recentrer sur mes territoires",
+
+  "poiMapTitle": "Points de vue",
+  "poiMapViewRideAction": "Voir la sortie",
+  "poiMapNearMeTooltip": "Autour de moi",
+
+  "badgeCatalogTitle": "Badges",
+  "badgeProgressLabel": "{earned} / {total} badges obtenus",
+  "@badgeProgressLabel": {
+    "placeholders": {
+      "earned": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "badgeNotEarnedStatus": "Non obtenu",
+  "badgeEarnedOnLabel": "Obtenu le {date}",
+
+  "profileRewardsLabel": "RÉCOMPENSES",
+  "profileXpLabel": "XP",
+  "profileLevelLabel": "NIVEAU",
+  "profileTerritoriesLabel": "TERRITOIRES",
+  "profileViewTerritoriesAction": "Voir la carte des territoires",
+  "profileViewBadgesAction": "Voir tous les badges",
+
+  "sensorSettingsTitle": "Capteurs de conduite",
+  "sensorSettingsToggleLabel": "Capturer l'angle d'inclinaison et les forces G",
+  "sensorSettingsDescription": "Utilise l'accéléromètre/gyroscope du téléphone uniquement pendant l'enregistrement. Désactivé par défaut pour économiser la batterie.",
+  "batteryOptimizationTitle": "Fiabiliser le suivi",
+  "batteryOptimizationMessage": "Certains téléphones (Samsung en particulier) arrêtent agressivement les applications en arrière-plan. Désactivez l'optimisation de batterie pour REDL afin qu'une longue sortie ne soit pas interrompue.",
+  "batteryOptimizationAction": "Ouvrir les réglages de batterie",
+  "batteryOptimizationDismiss": "Pas maintenant"
 }

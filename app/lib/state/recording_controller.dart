@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -7,8 +8,27 @@ import 'package:geolocator/geolocator.dart';
 
 import '../core/format.dart';
 import '../core/models/captured_photo.dart';
+import '../core/models/point_of_interest.dart';
 import '../core/models/track_point.dart';
+import '../core/repositories/ride_repository.dart';
 import 'recording_task_handler.dart';
+
+/// A point of interest the rider tried to add while offline (or the
+/// request otherwise failed) - retried on the next GPS fix rather than
+/// lost, per the project doc's offline queue for live POIs.
+class _PendingPoiSubmission {
+  _PendingPoiSubmission({
+    required this.lat,
+    required this.lng,
+    this.title,
+    this.photo,
+  });
+
+  final double lat;
+  final double lng;
+  final String? title;
+  final File? photo;
+}
 
 enum RecordingState { idle, recording, paused, stopped }
 
@@ -23,13 +43,23 @@ const _pauseResumeButtonId = 'pause_resume';
 /// keeps the app process alive with the screen locked - geolocator's
 /// position stream just keeps running in this same (kept-alive) process.
 class RecordingController extends ChangeNotifier {
-  RecordingController() {
+  RecordingController(this._rideRepository) {
     FlutterForegroundTask.addTaskDataCallback(_onTaskData);
   }
+
+  final RideRepository _rideRepository;
 
   RecordingState state = RecordingState.idle;
   final List<TrackPoint> track = [];
   final List<CapturedPhoto> photos = [];
+  final List<PointOfInterest> poisAdded = [];
+  final List<_PendingPoiSubmission> _pendingPois = [];
+  bool _flushingPois = false;
+
+  /// The backend ride id, obtained from POST /rides/start the moment
+  /// recording begins - so POIs can be attached before the ride is
+  /// finished/published (see ride_repository.dart).
+  int? rideId;
 
   double distanceMeters = 0;
   double currentSpeedKmh = 0;
@@ -44,6 +74,8 @@ class RecordingController extends ChangeNotifier {
   DateTime? _lastResumeTime;
   bool _serviceInitialized = false;
 
+  int get pendingPoiCount => _pendingPois.length;
+
   static const _minAccuracyMeters = 25.0;
   static const _minDistanceFilterMeters = 5.0;
 
@@ -52,12 +84,14 @@ class RecordingController extends ChangeNotifier {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-    if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+    if (permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.denied) {
       return false;
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final notificationPermission = await FlutterForegroundTask.checkNotificationPermission();
+      final notificationPermission =
+          await FlutterForegroundTask.checkNotificationPermission();
       if (notificationPermission != NotificationPermission.granted) {
         await FlutterForegroundTask.requestNotificationPermission();
       }
@@ -76,7 +110,10 @@ class RecordingController extends ChangeNotifier {
         channelDescription: 'Shows live stats while a ride is being recorded.',
         onlyAlertOnce: true,
       ),
-      iosNotificationOptions: const IOSNotificationOptions(showNotification: false, playSound: false),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
       foregroundTaskOptions: ForegroundTaskOptions(
         eventAction: ForegroundTaskEventAction.nothing(),
         allowWakeLock: true,
@@ -94,12 +131,20 @@ class RecordingController extends ChangeNotifier {
   Future<bool> start() async {
     if (!await _ensurePermission()) return false;
 
+    try {
+      rideId = await _rideRepository.start();
+    } catch (_) {
+      return false;
+    }
+
     _initForegroundTaskIfNeeded();
     await FlutterForegroundTask.startService(
       serviceId: 501,
       notificationTitle: 'Recording your ride',
       notificationText: '0.00 km · 0s',
-      notificationButtons: const [NotificationButton(id: _pauseResumeButtonId, text: 'Pause')],
+      notificationButtons: const [
+        NotificationButton(id: _pauseResumeButtonId, text: 'Pause'),
+      ],
       callback: recordingTaskHandlerCallback,
     );
 
@@ -119,7 +164,9 @@ class RecordingController extends ChangeNotifier {
       intervalDuration: const Duration(seconds: 2),
     );
 
-    _positionSub = Geolocator.getPositionStream(locationSettings: settings).listen(_onPosition);
+    _positionSub = Geolocator.getPositionStream(
+      locationSettings: settings,
+    ).listen(_onPosition);
   }
 
   void _onPosition(Position position) {
@@ -129,8 +176,10 @@ class RecordingController extends ChangeNotifier {
 
     if (_lastKept != null) {
       final segment = Geolocator.distanceBetween(
-        _lastKept!.latitude, _lastKept!.longitude,
-        position.latitude, position.longitude,
+        _lastKept!.latitude,
+        _lastKept!.longitude,
+        position.latitude,
+        position.longitude,
       );
       if (segment < _minDistanceFilterMeters) return;
       distanceMeters += segment;
@@ -142,15 +191,87 @@ class RecordingController extends ChangeNotifier {
     currentSpeedKmh = speedKmh;
     maxSpeedKmh = math.max(maxSpeedKmh, speedKmh);
 
-    track.add(TrackPoint(
-      lat: position.latitude,
-      lng: position.longitude,
-      alt: position.altitude,
-      speed: speedKmh,
-      t: DateTime.now().toIso8601String(),
-    ));
+    track.add(
+      TrackPoint(
+        lat: position.latitude,
+        lng: position.longitude,
+        alt: position.altitude,
+        speed: speedKmh,
+        t: DateTime.now().toIso8601String(),
+      ),
+    );
 
     notifyListeners();
+    unawaited(_flushPendingPois());
+  }
+
+  /// Adds a point of interest at the rider's current position, without
+  /// pausing GPS tracking. Sent immediately; queued locally and retried on
+  /// the next GPS fix if the request fails (offline, timeout, ...).
+  Future<void> addPoi({String? title, File? photo}) async {
+    final position = _lastPosition;
+    final id = rideId;
+    if (position == null || id == null) return;
+
+    try {
+      final poi = await _rideRepository.addPoi(
+        id,
+        lat: position.latitude,
+        lng: position.longitude,
+        title: title,
+        photo: photo,
+      );
+      poisAdded.add(poi);
+    } catch (_) {
+      _pendingPois.add(
+        _PendingPoiSubmission(
+          lat: position.latitude,
+          lng: position.longitude,
+          title: title,
+          photo: photo,
+        ),
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> _flushPendingPois() async {
+    final id = rideId;
+    if (id == null || _flushingPois || _pendingPois.isEmpty) return;
+    _flushingPois = true;
+
+    final stillPending = <_PendingPoiSubmission>[];
+    for (final submission in List.of(_pendingPois)) {
+      try {
+        final poi = await _rideRepository.addPoi(
+          id,
+          lat: submission.lat,
+          lng: submission.lng,
+          title: submission.title,
+          photo: submission.photo,
+        );
+        poisAdded.add(poi);
+      } catch (_) {
+        stillPending.add(submission);
+      }
+    }
+
+    _pendingPois
+      ..clear()
+      ..addAll(stillPending);
+    _flushingPois = false;
+    notifyListeners();
+  }
+
+  /// Abandons the ride started with [start] without publishing it.
+  Future<void> discard() async {
+    final id = rideId;
+    if (id == null) return;
+    try {
+      await _rideRepository.discard(id);
+    } catch (_) {
+      // Best-effort - an orphaned in_progress ride is harmless (never shown to anyone but its owner).
+    }
   }
 
   void _startTicker() {
@@ -165,12 +286,20 @@ class RecordingController extends ChangeNotifier {
   }
 
   void _updateNotification() {
-    if (state != RecordingState.recording && state != RecordingState.paused) return;
+    if (state != RecordingState.recording && state != RecordingState.paused) {
+      return;
+    }
     FlutterForegroundTask.updateService(
-      notificationTitle: state == RecordingState.paused ? 'Ride paused' : 'Recording your ride',
-      notificationText: '${formatDistanceKm(distanceMeters / 1000)} · ${formatDuration(elapsed)}',
+      notificationTitle: state == RecordingState.paused
+          ? 'Ride paused'
+          : 'Recording your ride',
+      notificationText:
+          '${formatDistanceKm(distanceMeters / 1000)} · ${formatDuration(elapsed)}',
       notificationButtons: [
-        NotificationButton(id: _pauseResumeButtonId, text: state == RecordingState.paused ? 'Resume' : 'Pause'),
+        NotificationButton(
+          id: _pauseResumeButtonId,
+          text: state == RecordingState.paused ? 'Resume' : 'Pause',
+        ),
       ],
     );
   }
@@ -229,6 +358,9 @@ class RecordingController extends ChangeNotifier {
     _ticker?.cancel();
     track.clear();
     photos.clear();
+    poisAdded.clear();
+    _pendingPois.clear();
+    rideId = null;
     distanceMeters = 0;
     currentSpeedKmh = 0;
     maxSpeedKmh = 0;

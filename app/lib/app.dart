@@ -5,7 +5,10 @@ import 'package:provider/provider.dart';
 import 'core/api_client.dart';
 import 'core/repositories/auth_repository.dart';
 import 'core/repositories/bike_repository.dart';
+import 'core/repositories/point_of_interest_repository.dart';
+import 'core/repositories/reward_repository.dart';
 import 'core/repositories/ride_repository.dart';
+import 'core/repositories/territory_repository.dart';
 import 'core/repositories/user_repository.dart';
 import 'core/route_observer.dart';
 import 'core/token_storage.dart';
@@ -33,9 +36,15 @@ class RedlApp extends StatelessWidget {
         Provider(create: (_) => BikeRepository(apiClient)),
         Provider(create: (_) => RideRepository(apiClient)),
         Provider(create: (_) => UserRepository(apiClient)),
+        Provider(create: (_) => PointOfInterestRepository(apiClient)),
+        Provider(create: (_) => TerritoryRepository(apiClient)),
+        Provider(create: (_) => RewardRepository(apiClient)),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(apiClient: apiClient, authRepository: authRepository, tokenStorage: tokenStorage)
-            ..restore(),
+          create: (_) => AuthProvider(
+            apiClient: apiClient,
+            authRepository: authRepository,
+            tokenStorage: tokenStorage,
+          )..restore(),
         ),
         ChangeNotifierProvider(create: (_) => LocaleProvider()..restore()),
       ],
@@ -72,7 +81,11 @@ class _AuthGate extends StatelessWidget {
 
     switch (status) {
       case AuthStatus.unknown:
-        return const Scaffold(body: Center(child: CircularProgressIndicator(color: RedlColors.accent)));
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(color: RedlColors.accent),
+          ),
+        );
       case AuthStatus.authenticated:
         return const HomeShell();
       case AuthStatus.unauthenticated:

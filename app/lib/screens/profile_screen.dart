@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/models/bike.dart';
+import '../core/models/reward_summary.dart';
 import '../core/models/rider_stats.dart';
 import '../core/repositories/bike_repository.dart';
+import '../core/repositories/reward_repository.dart';
 import '../core/repositories/ride_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
@@ -11,8 +13,10 @@ import '../state/locale_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
+import 'badge_catalog_screen.dart';
 import 'edit_profile_screen.dart';
 import 'garage_screen.dart';
+import 'territory_map_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,6 +27,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   RiderStats? _stats;
+  RewardSummary? _rewards;
   List<Bike> _bikes = [];
   bool _loading = true;
 
@@ -38,11 +43,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final results = await Future.wait([
         context.read<RideRepository>().myStats(),
         context.read<BikeRepository>().list(),
+        context.read<RewardRepository>().mine(),
       ]);
       if (mounted) {
         setState(() {
           _stats = results[0] as RiderStats;
           _bikes = results[1] as List<Bike>;
+          _rewards = results[2] as RewardSummary;
         });
       }
     } catch (_) {
@@ -218,6 +225,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
+                    if (_rewards != null) ...[
+                      const SizedBox(height: 24),
+                      Text(l10n.profileRewardsLabel, style: RedlText.eyebrow()),
+                      const SizedBox(height: 12),
+                      _RewardsBlock(rewards: _rewards!),
+                    ],
                     const SizedBox(height: 24),
                     Text(l10n.vehiclesLabel, style: RedlText.eyebrow()),
                     const SizedBox(height: 12),
@@ -283,6 +296,59 @@ class _ProfileStat extends StatelessWidget {
           Text(label, style: RedlText.eyebrow(fontSize: 9)),
         ],
       ),
+    );
+  }
+}
+
+/// XP/level/badges/territories summary (REDL project doc, section 8.2).
+class _RewardsBlock extends StatelessWidget {
+  const _RewardsBlock({required this.rewards});
+
+  final RewardSummary rewards;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: const BoxDecoration(border: Border.symmetric(horizontal: BorderSide(color: RedlColors.divider))),
+          child: Row(
+            children: [
+              _ProfileStat(label: l10n.profileXpLabel, value: '${rewards.xpTotal}'),
+              _ProfileStat(label: l10n.profileLevelLabel, value: '${rewards.level}'),
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TerritoryMapScreen())),
+                child: _ProfileStat(label: l10n.profileTerritoriesLabel, value: '${rewards.territoriesOwnedCount}'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (rewards.badges.isNotEmpty)
+          SizedBox(
+            height: 56,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: rewards.badges.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, i) => Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(color: RedlColors.surface2, shape: BoxShape.circle),
+                child: const Icon(Icons.military_tech, color: RedlColors.accent, size: 24),
+              ),
+            ),
+          ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BadgeCatalogScreen())),
+          child: Text(l10n.profileViewBadgesAction, style: RedlText.body(fontSize: 13, color: RedlColors.textSecondary)),
+        ),
+      ],
     );
   }
 }

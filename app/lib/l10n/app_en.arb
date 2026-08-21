@@ -206,5 +206,93 @@
   "changeBikePhotoLabel": "Change Photo",
 
   "apiErrorNetwork": "Could not reach the server. Check your connection and API URL.",
-  "apiErrorGeneric": "Something went wrong. Please try again."
+  "apiErrorGeneric": "Something went wrong. Please try again.",
+
+  "recordAddPoi": "Add point of interest",
+  "poiFormTitle": "New point of interest",
+  "poiFormTitleFieldLabel": "Title (optional)",
+  "poiFormAdd": "Add",
+  "discardRideTitle": "Discard ride?",
+  "discardRideMessage": "This ride hasn't been saved yet. If you leave now, it will be discarded.",
+  "discardRideConfirm": "Discard",
+
+  "viewDetailedStatsAction": "View detailed statistics",
+  "xpGainedLabel": "XP EARNED",
+  "levelLabel": "LEVEL",
+  "leveledUpMessage": "Level up! You reached level {level}.",
+  "@leveledUpMessage": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "territoriesTouchedMessage": "{count, plural, =1{1 territory touched during this ride} other{{count} territories touched during this ride}}",
+  "@territoriesTouchedMessage": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "newBadgesLabel": "NEW BADGES",
+  "rideScoreLabel": "RIDE SCORE",
+  "poiSectionLabel": "POINTS OF INTEREST",
+
+  "detailedStatsTitle": "Statistics",
+  "shareStatsAction": "Share my stats",
+  "statsCourseSectionLabel": "ROUTE",
+  "statsRidingStyleSectionLabel": "RIDING STYLE",
+  "statElevationGain": "ELEVATION GAIN",
+  "statElevationLoss": "ELEVATION LOSS",
+  "statMovingTime": "MOVING TIME",
+  "statStoppedTime": "STOPPED TIME",
+  "statMaxSpeed": "MAX SPEED",
+  "statMaxLeanAngle": "MAX LEAN ANGLE",
+  "statMaxBrakeG": "MAX BRAKING",
+  "statMaxAccelG": "MAX ACCELERATION",
+  "statMaxLateralG": "MAX LATERAL G",
+  "sensorsDisabledHint": "Enable sensors on your next ride to see these statistics.",
+  "sensorsSettingsLinkAction": "Go to sensor settings",
+
+  "territoryMapTitle": "Territories",
+  "territoriesOwnedCountLabel": "{count, plural, =0{0 zones owned} =1{1 zone owned} other{{count} zones owned}}",
+  "@territoriesOwnedCountLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "territoryLegendMine": "Me",
+  "territoryLegendOthers": "Others",
+  "territoryLegendFree": "Free",
+  "territorySheetFreeLabel": "Free zone",
+  "territorySheetOwnerLabel": "Owner",
+  "territorySheetInfluenceLabel": "Cumulative distance (30 days)",
+  "recenterOnMyTerritoriesTooltip": "Recenter on my territories",
+
+  "poiMapTitle": "Points of Interest",
+  "poiMapViewRideAction": "View ride",
+  "poiMapNearMeTooltip": "Near me",
+
+  "badgeCatalogTitle": "Badges",
+  "badgeProgressLabel": "{earned} / {total} badges earned",
+  "@badgeProgressLabel": {
+    "placeholders": {
+      "earned": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "badgeNotEarnedStatus": "Not earned yet",
+  "badgeEarnedOnLabel": "Earned on {date}",
+
+  "profileRewardsLabel": "REWARDS",
+  "profileXpLabel": "XP",
+  "profileLevelLabel": "LEVEL",
+  "profileTerritoriesLabel": "TERRITORIES",
+  "profileViewTerritoriesAction": "View territories map",
+  "profileViewBadgesAction": "View all badges",
+
+  "sensorSettingsTitle": "Ride sensors",
+  "sensorSettingsToggleLabel": "Capture lean angle & G-forces",
+  "sensorSettingsDescription": "Uses your phone's accelerometer/gyroscope during recording only. Off by default to save battery.",
+  "batteryOptimizationTitle": "Keep tracking reliable",
+  "batteryOptimizationMessage": "Some phones (Samsung especially) aggressively stop apps running in the background. Disable battery optimization for REDL so a long ride isn't interrupted.",
+  "batteryOptimizationAction": "Open battery settings",
+  "batteryOptimizationDismiss": "Not now"
 }
