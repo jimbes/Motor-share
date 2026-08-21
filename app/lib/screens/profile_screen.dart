@@ -17,6 +17,7 @@ import '../theme/redl_text_styles.dart';
 import 'badge_catalog_screen.dart';
 import 'edit_profile_screen.dart';
 import 'garage_screen.dart';
+import 'rewards_screen.dart';
 import 'territory_map_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -228,7 +229,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     if (_rewards != null) ...[
                       const SizedBox(height: 24),
-                      Text(l10n.profileRewardsLabel, style: RedlText.eyebrow()),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RewardsScreen())),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(l10n.profileRewardsLabel, style: RedlText.eyebrow()),
+                            Text(l10n.profileViewRewardsAction, style: RedlText.meta(color: RedlColors.textSecondary)),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       _RewardsBlock(rewards: _rewards!),
                     ],
@@ -310,21 +320,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({required this.label, required this.value});
+  const _ProfileStat({required this.label, required this.value, this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final column = Column(
+      children: [
+        Text(value, style: RedlText.statValue(fontSize: 17)),
+        const SizedBox(height: 4),
+        Text(label, style: RedlText.eyebrow(fontSize: 9)),
+      ],
+    );
+
+    // Expanded must stay the direct child returned here so a Row parent can
+    // read its flex ParentData - any tap target goes inside it instead.
     return Expanded(
-      child: Column(
-        children: [
-          Text(value, style: RedlText.statValue(fontSize: 17)),
-          const SizedBox(height: 4),
-          Text(label, style: RedlText.eyebrow(fontSize: 9)),
-        ],
-      ),
+      child: onTap != null ? GestureDetector(onTap: onTap, child: column) : column,
     );
   }
 }
@@ -349,9 +364,10 @@ class _RewardsBlock extends StatelessWidget {
             children: [
               _ProfileStat(label: l10n.profileXpLabel, value: '${rewards.xpTotal}'),
               _ProfileStat(label: l10n.profileLevelLabel, value: '${rewards.level}'),
-              GestureDetector(
+              _ProfileStat(
+                label: l10n.profileTerritoriesLabel,
+                value: '${rewards.territoriesOwnedCount}',
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TerritoryMapScreen())),
-                child: _ProfileStat(label: l10n.profileTerritoriesLabel, value: '${rewards.territoriesOwnedCount}'),
               ),
             ],
           ),

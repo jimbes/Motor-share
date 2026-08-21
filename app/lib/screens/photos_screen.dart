@@ -185,7 +185,14 @@ class _PhotosGrid extends StatelessWidget {
         final photo = photos[index];
         return GestureDetector(
           onTap: () => onTapPhoto(photo),
-          child: Image.network(photo.url, fit: BoxFit.cover),
+          child: Image.network(
+            photo.url,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: RedlColors.surface2,
+              child: const Icon(Icons.broken_image_outlined, color: RedlColors.textSecondary),
+            ),
+          ),
         );
       },
     );

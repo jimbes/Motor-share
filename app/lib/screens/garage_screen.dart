@@ -126,7 +126,12 @@ class _GarageScreenState extends State<GarageScreen> {
                                     height: 32,
                                     color: RedlColors.surface4,
                                     child: bike.photoUrl != null
-                                        ? Image.network(bike.photoUrl!, fit: BoxFit.cover)
+                                        ? Image.network(
+                                            bike.photoUrl!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(Icons.two_wheeler_rounded, color: RedlColors.baseAlt, size: 20),
+                                          )
                                         : const Icon(Icons.two_wheeler_rounded, color: RedlColors.baseAlt, size: 20),
                                   ),
                                 ),

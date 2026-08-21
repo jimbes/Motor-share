@@ -648,6 +648,12 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 100,
+                          height: 100,
+                          color: RedlColors.surface2,
+                          child: const Icon(Icons.broken_image_outlined, color: RedlColors.textMuted),
+                        ),
                       ),
                     ),
                   ),
@@ -673,6 +679,12 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                                 width: 100,
                                 height: 100,
                                 fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 100,
+                                  height: 100,
+                                  color: RedlColors.surface2,
+                                  child: const Icon(Icons.broken_image_outlined, color: RedlColors.textMuted),
+                                ),
                               )
                             : Container(
                                 width: 100,

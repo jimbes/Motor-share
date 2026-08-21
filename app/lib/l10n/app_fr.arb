@@ -225,6 +225,39 @@
   "profileTerritoriesLabel": "TERRITOIRES",
   "profileViewTerritoriesAction": "Voir la carte des territoires",
   "profileViewBadgesAction": "Voir tous les badges",
+  "profileViewRewardsAction": "Voir ma progression",
+
+  "rewardsScreenTitle": "Mes récompenses",
+  "rewardsLoadError": "Impossible de charger vos récompenses.",
+  "rewardsLevelLabel": "Niveau {level}",
+  "@rewardsLevelLabel": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "rewardsXpTotalLabel": "{xp} XP au total",
+  "@rewardsXpTotalLabel": {
+    "placeholders": {
+      "xp": {"type": "int"}
+    }
+  },
+  "rewardsNextLevelLabel": "{remaining} XP avant le niveau {nextLevel}",
+  "@rewardsNextLevelLabel": {
+    "placeholders": {
+      "remaining": {"type": "int"},
+      "nextLevel": {"type": "int"}
+    }
+  },
+  "rewardsTerritoriesSectionTitle": "Territoires",
+  "rewardsTerritoriesOwnedLabel": "{count} possédés",
+  "@rewardsTerritoriesOwnedLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "rewardsBadgesSectionTitle": "Badges",
+  "rewardsNoBadgesYet": "Aucun badge pour le moment - à vous de gagner le premier.",
+  "rewardsViewFullCatalogAction": "Voir le catalogue complet",
 
   "sensorSettingsTitle": "Capteurs de conduite",
   "sensorSettingsToggleLabel": "Capturer l'angle d'inclinaison et les forces G",

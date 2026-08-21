@@ -287,6 +287,39 @@
   "profileTerritoriesLabel": "TERRITORIES",
   "profileViewTerritoriesAction": "View territories map",
   "profileViewBadgesAction": "View all badges",
+  "profileViewRewardsAction": "View my progress",
+
+  "rewardsScreenTitle": "My rewards",
+  "rewardsLoadError": "Couldn't load your rewards.",
+  "rewardsLevelLabel": "Level {level}",
+  "@rewardsLevelLabel": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "rewardsXpTotalLabel": "{xp} XP total",
+  "@rewardsXpTotalLabel": {
+    "placeholders": {
+      "xp": {"type": "int"}
+    }
+  },
+  "rewardsNextLevelLabel": "{remaining} XP to level {nextLevel}",
+  "@rewardsNextLevelLabel": {
+    "placeholders": {
+      "remaining": {"type": "int"},
+      "nextLevel": {"type": "int"}
+    }
+  },
+  "rewardsTerritoriesSectionTitle": "Territories",
+  "rewardsTerritoriesOwnedLabel": "{count} owned",
+  "@rewardsTerritoriesOwnedLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "rewardsBadgesSectionTitle": "Badges",
+  "rewardsNoBadgesYet": "No badges yet - go earn your first one.",
+  "rewardsViewFullCatalogAction": "View full catalog",
 
   "sensorSettingsTitle": "Ride sensors",
   "sensorSettingsToggleLabel": "Capture lean angle & G-forces",

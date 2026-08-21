@@ -86,6 +86,11 @@ class _PoiMapScreenState extends State<PoiMapScreen> {
                     height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 200,
+                      color: RedlColors.surface2,
+                      child: const Icon(Icons.broken_image_outlined, color: RedlColors.textMuted, size: 32),
+                    ),
                   ),
                 )
               else
