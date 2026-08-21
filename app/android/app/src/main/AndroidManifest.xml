@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Lets the app ask to be exempted from battery optimization, since some
+         OEMs (Samsung especially) kill the recording foreground service in
+         the background even with a foreground notification - see
+         BatteryOptimizationPrompt. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <application
         android:label="REDL"

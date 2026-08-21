@@ -12,6 +12,7 @@ import '../core/models/captured_photo.dart';
 import '../core/models/reward_summary.dart';
 import '../core/models/ride.dart';
 import '../core/models/ride_comment.dart';
+import '../core/models/ride_sensor_stats.dart';
 import '../core/models/speeding_event.dart';
 import '../core/models/track_point.dart';
 import '../core/models/user_summary.dart';
@@ -41,6 +42,7 @@ class RideSummaryScreen extends StatefulWidget {
     required this.maxSpeedKmh,
     required this.track,
     this.initialPhotos = const [],
+    this.sensorStats,
   }) : _mode = _Mode.save,
        justFinishedRewards = null;
 
@@ -55,7 +57,8 @@ class RideSummaryScreen extends StatefulWidget {
        avgSpeedKmh = null,
        maxSpeedKmh = null,
        track = null,
-       initialPhotos = const [];
+       initialPhotos = const [],
+       sensorStats = null;
 
   final _Mode _mode;
   final int rideId;
@@ -67,6 +70,7 @@ class RideSummaryScreen extends StatefulWidget {
   final double? maxSpeedKmh;
   final List<TrackPoint>? track;
   final List<CapturedPhoto> initialPhotos;
+  final RideSensorStats? sensorStats;
 
   @override
   State<RideSummaryScreen> createState() => _RideSummaryScreenState();
@@ -204,6 +208,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         avgSpeedKmh: widget.avgSpeedKmh!,
         maxSpeedKmh: widget.maxSpeedKmh!,
         track: widget.track!,
+        sensorStats: widget.sensorStats,
       );
       final ride = result.ride;
 

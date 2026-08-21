@@ -5,12 +5,15 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../core/format.dart';
 import '../core/models/captured_photo.dart';
 import '../core/models/point_of_interest.dart';
+import '../core/models/ride_sensor_stats.dart';
 import '../core/models/track_point.dart';
 import '../core/repositories/ride_repository.dart';
+import '../core/sensor_stats_tracker.dart';
 import 'recording_task_handler.dart';
 
 /// A point of interest the rider tried to add while offline (or the
@@ -74,7 +77,16 @@ class RecordingController extends ChangeNotifier {
   DateTime? _lastResumeTime;
   bool _serviceInitialized = false;
 
+  StreamSubscription<AccelerometerEvent>? _accelSub;
+  SensorStatsTracker? _sensorTracker;
+
   int get pendingPoiCount => _pendingPois.length;
+
+  /// Whether sensor capture is running for this ride - shown as a small
+  /// discreet indicator on the recording screen (project doc 9.4).
+  bool get sensorsActive => _accelSub != null;
+
+  RideSensorStats? get sensorStats => _sensorTracker?.snapshot();
 
   static const _minAccuracyMeters = 25.0;
   static const _minDistanceFilterMeters = 5.0;
@@ -128,7 +140,7 @@ class RecordingController extends ChangeNotifier {
     }
   }
 
-  Future<bool> start() async {
+  Future<bool> start({bool sensorsEnabled = false}) async {
     if (!await _ensurePermission()) return false;
 
     try {
@@ -153,8 +165,14 @@ class RecordingController extends ChangeNotifier {
     _lastResumeTime = DateTime.now();
     _subscribe();
     _startTicker();
+    if (sensorsEnabled) _subscribeToSensors();
     notifyListeners();
     return true;
+  }
+
+  void _subscribeToSensors() {
+    _sensorTracker = SensorStatsTracker();
+    _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.gameInterval).listen(_sensorTracker!.onData);
   }
 
   void _subscribe() {
@@ -307,6 +325,7 @@ class RecordingController extends ChangeNotifier {
   void pause() {
     if (state != RecordingState.recording) return;
     _positionSub?.pause();
+    _accelSub?.pause();
     _ticker?.cancel();
     if (_lastResumeTime != null) {
       elapsed += DateTime.now().difference(_lastResumeTime!);
@@ -322,6 +341,7 @@ class RecordingController extends ChangeNotifier {
     if (state != RecordingState.paused) return;
     _lastResumeTime = DateTime.now();
     _positionSub?.resume();
+    _accelSub?.resume();
     _startTicker();
     state = RecordingState.recording;
     _updateNotification();
@@ -330,6 +350,8 @@ class RecordingController extends ChangeNotifier {
 
   void stop() {
     _positionSub?.cancel();
+    _accelSub?.cancel();
+    _accelSub = null;
     _ticker?.cancel();
     if (_lastResumeTime != null && state == RecordingState.recording) {
       elapsed += DateTime.now().difference(_lastResumeTime!);
@@ -355,6 +377,9 @@ class RecordingController extends ChangeNotifier {
 
   void reset() {
     _positionSub?.cancel();
+    _accelSub?.cancel();
+    _accelSub = null;
+    _sensorTracker = null;
     _ticker?.cancel();
     track.clear();
     photos.clear();
@@ -377,6 +402,7 @@ class RecordingController extends ChangeNotifier {
   void dispose() {
     FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
     _positionSub?.cancel();
+    _accelSub?.cancel();
     _ticker?.cancel();
     super.dispose();
   }

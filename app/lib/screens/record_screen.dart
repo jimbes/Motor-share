@@ -13,9 +13,11 @@ import '../core/repositories/ride_repository.dart';
 import '../core/speed_color.dart';
 import '../l10n/app_localizations.dart';
 import '../state/recording_controller.dart';
+import '../state/sensor_settings_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
+import '../widgets/battery_optimization_prompt.dart';
 import '../widgets/redl_buttons.dart';
 import 'ride_summary_screen.dart';
 
@@ -58,7 +60,11 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Future<void> _start() async {
-    final ok = await _controller.start();
+    await maybeShowBatteryOptimizationPrompt(context);
+    if (!mounted) return;
+
+    final sensorsEnabled = context.read<SensorSettingsProvider>().enabled;
+    final ok = await _controller.start(sensorsEnabled: sensorsEnabled);
     if (!ok && mounted) {
       setState(
         () => _permissionError = AppLocalizations.of(
@@ -115,6 +121,7 @@ class _RecordScreenState extends State<RecordScreen> {
           maxSpeedKmh: _controller.maxSpeedKmh,
           track: List.of(_controller.track),
           initialPhotos: List.of(_controller.photos),
+          sensorStats: _controller.sensorStats,
         ),
       ),
     );
@@ -304,7 +311,24 @@ class _RecordScreenState extends State<RecordScreen> {
               Positioned(
                 top: MediaQuery.of(context).padding.top + 12,
                 left: RedlSpacing.screenPadding,
-                child: _RecordingPill(paused: isPaused),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _RecordingPill(paused: isPaused),
+                    if (_controller.sensorsActive) ...[
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: l10n.sensorSettingsToggleLabel,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(color: RedlColors.surface0, shape: BoxShape.circle),
+                          child: const Icon(Icons.sensors, size: 14, color: RedlColors.accent),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             if (isIdle)
               Center(

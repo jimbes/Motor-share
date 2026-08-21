@@ -17,6 +17,7 @@ import 'screens/home_shell.dart';
 import 'screens/onboarding_screen.dart';
 import 'state/auth_provider.dart';
 import 'state/locale_provider.dart';
+import 'state/sensor_settings_provider.dart';
 import 'theme/redl_colors.dart';
 import 'theme/redl_theme.dart';
 
@@ -47,6 +48,7 @@ class RedlApp extends StatelessWidget {
           )..restore(),
         ),
         ChangeNotifierProvider(create: (_) => LocaleProvider()..restore()),
+        ChangeNotifierProvider(create: (_) => SensorSettingsProvider()..restore()),
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProvider, _) {
