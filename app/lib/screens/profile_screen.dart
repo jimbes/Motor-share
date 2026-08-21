@@ -10,6 +10,7 @@ import '../core/repositories/ride_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
 import '../state/locale_provider.dart';
+import '../state/sensor_settings_provider.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
@@ -268,6 +269,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ))
                             .toList(),
                       ),
+                    const SizedBox(height: 24),
+                    Text(l10n.sensorSettingsTitle, style: RedlText.eyebrow()),
+                    const SizedBox(height: 12),
+                    Consumer<SensorSettingsProvider>(
+                      builder: (context, sensorSettings, _) => Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(l10n.sensorSettingsToggleLabel, style: RedlText.body(fontSize: 13)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l10n.sensorSettingsDescription,
+                                  style: RedlText.meta(color: RedlColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: sensorSettings.enabled,
+                            activeTrackColor: RedlColors.accent,
+                            onChanged: sensorSettings.setEnabled,
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 32),
                   ],
                 ),
