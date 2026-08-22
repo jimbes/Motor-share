@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -58,6 +59,38 @@ class RecordingController extends ChangeNotifier {
   final List<PointOfInterest> poisAdded = [];
   final List<_PendingPoiSubmission> _pendingPois = [];
   bool _flushingPois = false;
+
+  /// Set when a point of interest could not be added and the failure isn't
+  /// transient (a validation error, not a network hiccup) - so it won't
+  /// silently retry forever with the rider never finding out. Cleared once
+  /// read via [consumePoiError].
+  String? poiError;
+
+  String? consumePoiError() {
+    final error = poiError;
+    poiError = null;
+    return error;
+  }
+
+  /// A network/server hiccup is worth retrying on the next GPS fix; a 4xx
+  /// response means the request itself is invalid and will never succeed,
+  /// so it must surface to the rider instead of retrying forever.
+  bool _isPermanentFailure(Object error) {
+    if (error is DioException && error.type == DioExceptionType.badResponse) {
+      final status = error.response?.statusCode;
+      return status != null && status >= 400 && status < 500;
+    }
+    return false;
+  }
+
+  String _describeFailure(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] is String) return data['message'] as String;
+      return error.message ?? error.toString();
+    }
+    return error.toString();
+  }
 
   /// The backend ride id, obtained from POST /rides/start the moment
   /// recording begins - so POIs can be attached before the ride is
@@ -240,15 +273,19 @@ class RecordingController extends ChangeNotifier {
         photo: photo,
       );
       poisAdded.add(poi);
-    } catch (_) {
-      _pendingPois.add(
-        _PendingPoiSubmission(
-          lat: position.latitude,
-          lng: position.longitude,
-          title: title,
-          photo: photo,
-        ),
-      );
+    } catch (e) {
+      if (_isPermanentFailure(e)) {
+        poiError = _describeFailure(e);
+      } else {
+        _pendingPois.add(
+          _PendingPoiSubmission(
+            lat: position.latitude,
+            lng: position.longitude,
+            title: title,
+            photo: photo,
+          ),
+        );
+      }
     }
     notifyListeners();
   }
@@ -269,8 +306,12 @@ class RecordingController extends ChangeNotifier {
           photo: submission.photo,
         );
         poisAdded.add(poi);
-      } catch (_) {
-        stillPending.add(submission);
+      } catch (e) {
+        if (_isPermanentFailure(e)) {
+          poiError = _describeFailure(e);
+        } else {
+          stillPending.add(submission);
+        }
       }
     }
 

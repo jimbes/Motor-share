@@ -212,6 +212,12 @@
   "poiFormTitle": "New point of interest",
   "poiFormTitleFieldLabel": "Title (optional)",
   "poiFormAdd": "Add",
+  "poiAddError": "Couldn't add point of interest: {reason}",
+  "@poiAddError": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
   "discardRideTitle": "Discard ride?",
   "discardRideMessage": "This ride hasn't been saved yet. If you leave now, it will be discarded.",
   "discardRideConfirm": "Discard",

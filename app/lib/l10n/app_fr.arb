@@ -150,6 +150,12 @@
   "poiFormTitle": "Nouveau point de vue",
   "poiFormTitleFieldLabel": "Titre (optionnel)",
   "poiFormAdd": "Ajouter",
+  "poiAddError": "Impossible d'ajouter le point de vue : {reason}",
+  "@poiAddError": {
+    "placeholders": {
+      "reason": {"type": "String"}
+    }
+  },
   "discardRideTitle": "Abandonner la sortie ?",
   "discardRideMessage": "Cette sortie n'a pas encore été enregistrée. Si vous quittez maintenant, elle sera abandonnée.",
   "discardRideConfirm": "Abandonner",

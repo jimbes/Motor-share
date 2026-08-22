@@ -57,6 +57,12 @@ class _RecordScreenState extends State<RecordScreen> {
         _mapController.camera.zoom,
       );
     }
+    final poiError = _controller.consumePoiError();
+    if (poiError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.poiAddError(poiError))),
+      );
+    }
   }
 
   Future<void> _start() async {
