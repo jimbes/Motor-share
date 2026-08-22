@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.zero,
             children: [
               SizedBox(
-                height: 164,
+                height: 232,
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
