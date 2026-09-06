@@ -3,6 +3,14 @@
 # project (native/Kotlin code included, e.g. the Android Auto
 # CarAppService integration), so a compile error there is caught here
 # instead of only being discovered on-device.
+#
+# Once that's green, the tag-release job auto-bumps the patch version
+# (vX.Y.Z -> vX.Y.Z+1, per the latest git tag) and pushes the new tag -
+# which is exactly what release-apk.yml's own `push: tags: v*.*.*` trigger
+# is watching for, so it takes over from there (signed build, GitHub
+# Release, APK upload) with no duplicated logic here. A minor/major bump
+# is still manual: trigger release-apk.yml by hand (Actions tab -> Release
+# APK -> Run workflow) with the desired version when one's warranted.
 name: CI
 
 on:
@@ -43,3 +51,30 @@ jobs:
 
       - name: Build debug APK
         run: flutter build apk --debug
+
+  tag-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Bump patch version and push the tag
+        run: |
+          latest=$(git tag --list 'v*.*.*' | sort -V | tail -n1)
+          if [ -z "$latest" ]; then
+            new_tag="v0.1.0"
+          else
+            IFS='.' read -r major minor patch <<< "${latest#v}"
+            new_tag="v${major}.${minor}.$((patch + 1))"
+          fi
+          echo "Latest tag: ${latest:-none} -> new tag: $new_tag"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$new_tag"
+          git push origin "$new_tag"
