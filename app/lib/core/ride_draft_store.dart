@@ -51,12 +51,13 @@ class PersistedPendingPoi {
     if (photoPath != null) 'photo_path': photoPath,
   };
 
-  factory PersistedPendingPoi.fromJson(Map<String, dynamic> json) => PersistedPendingPoi(
-    lat: (json['lat'] as num).toDouble(),
-    lng: (json['lng'] as num).toDouble(),
-    title: json['title'] as String?,
-    photoPath: json['photo_path'] as String?,
-  );
+  factory PersistedPendingPoi.fromJson(Map<String, dynamic> json) =>
+      PersistedPendingPoi(
+        lat: (json['lat'] as num).toDouble(),
+        lng: (json['lng'] as num).toDouble(),
+        title: json['title'] as String?,
+        photoPath: json['photo_path'] as String?,
+      );
 }
 
 /// A snapshot of an in-progress recording, written to disk continuously so
@@ -66,6 +67,7 @@ class PersistedPendingPoi {
 class RideRecordingDraft {
   RideRecordingDraft({
     required this.rideId,
+    this.bikeId,
     required this.recording,
     required this.startedAt,
     required this.elapsedSeconds,
@@ -78,6 +80,9 @@ class RideRecordingDraft {
   });
 
   final int? rideId;
+
+  /// The bike picked before recording started, if any (backlog FEAT-3).
+  final int? bikeId;
 
   /// True if recording, false if paused.
   final bool recording;
@@ -92,6 +97,7 @@ class RideRecordingDraft {
 
   Map<String, dynamic> toJson() => {
     if (rideId != null) 'ride_id': rideId,
+    if (bikeId != null) 'bike_id': bikeId,
     'recording': recording,
     'started_at': startedAt.toIso8601String(),
     'elapsed_seconds': elapsedSeconds,
@@ -103,24 +109,26 @@ class RideRecordingDraft {
     'pending_pois': pendingPois.map((p) => p.toJson()).toList(),
   };
 
-  factory RideRecordingDraft.fromJson(Map<String, dynamic> json) => RideRecordingDraft(
-    rideId: json['ride_id'] as int?,
-    recording: json['recording'] as bool? ?? true,
-    startedAt: DateTime.parse(json['started_at'] as String),
-    elapsedSeconds: json['elapsed_seconds'] as int? ?? 0,
-    distanceMeters: (json['distance_meters'] as num?)?.toDouble() ?? 0,
-    maxSpeedKmh: (json['max_speed_kmh'] as num?)?.toDouble() ?? 0,
-    track: (json['track'] as List<dynamic>? ?? const [])
-        .map((e) => TrackPoint.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    sensorsEnabled: json['sensors_enabled'] as bool? ?? false,
-    photos: (json['photos'] as List<dynamic>? ?? const [])
-        .map((e) => PersistedPhoto.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    pendingPois: (json['pending_pois'] as List<dynamic>? ?? const [])
-        .map((e) => PersistedPendingPoi.fromJson(e as Map<String, dynamic>))
-        .toList(),
-  );
+  factory RideRecordingDraft.fromJson(Map<String, dynamic> json) =>
+      RideRecordingDraft(
+        rideId: json['ride_id'] as int?,
+        bikeId: json['bike_id'] as int?,
+        recording: json['recording'] as bool? ?? true,
+        startedAt: DateTime.parse(json['started_at'] as String),
+        elapsedSeconds: json['elapsed_seconds'] as int? ?? 0,
+        distanceMeters: (json['distance_meters'] as num?)?.toDouble() ?? 0,
+        maxSpeedKmh: (json['max_speed_kmh'] as num?)?.toDouble() ?? 0,
+        track: (json['track'] as List<dynamic>? ?? const [])
+            .map((e) => TrackPoint.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        sensorsEnabled: json['sensors_enabled'] as bool? ?? false,
+        photos: (json['photos'] as List<dynamic>? ?? const [])
+            .map((e) => PersistedPhoto.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        pendingPois: (json['pending_pois'] as List<dynamic>? ?? const [])
+            .map((e) => PersistedPendingPoi.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
 }
 
 /// A fully-recorded ride awaiting a successful `PATCH /rides/{id}/finish` -
@@ -170,28 +178,32 @@ class RidePendingFinish {
     'companion_usernames': companionUsernames,
   };
 
-  factory RidePendingFinish.fromJson(Map<String, dynamic> json) => RidePendingFinish(
-    rideId: json['ride_id'] as int,
-    title: json['title'] as String,
-    description: json['description'] as String?,
-    bikeId: json['bike_id'] as int?,
-    durationSeconds: json['duration_seconds'] as int,
-    distanceMeters: json['distance_meters'] as int,
-    avgSpeedKmh: (json['avg_speed_kmh'] as num).toDouble(),
-    maxSpeedKmh: (json['max_speed_kmh'] as num).toDouble(),
-    track: (json['track'] as List<dynamic>? ?? const [])
-        .map((e) => TrackPoint.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    sensorStats: json['sensor_stats'] != null
-        ? RideSensorStats.fromJson(json['sensor_stats'] as Map<String, dynamic>)
-        : null,
-    photos: (json['photos'] as List<dynamic>? ?? const [])
-        .map((e) => PersistedPhoto.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    companionUsernames: (json['companion_usernames'] as List<dynamic>? ?? const [])
-        .map((e) => e as String)
-        .toList(),
-  );
+  factory RidePendingFinish.fromJson(Map<String, dynamic> json) =>
+      RidePendingFinish(
+        rideId: json['ride_id'] as int,
+        title: json['title'] as String,
+        description: json['description'] as String?,
+        bikeId: json['bike_id'] as int?,
+        durationSeconds: json['duration_seconds'] as int,
+        distanceMeters: json['distance_meters'] as int,
+        avgSpeedKmh: (json['avg_speed_kmh'] as num).toDouble(),
+        maxSpeedKmh: (json['max_speed_kmh'] as num).toDouble(),
+        track: (json['track'] as List<dynamic>? ?? const [])
+            .map((e) => TrackPoint.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        sensorStats: json['sensor_stats'] != null
+            ? RideSensorStats.fromJson(
+                json['sensor_stats'] as Map<String, dynamic>,
+              )
+            : null,
+        photos: (json['photos'] as List<dynamic>? ?? const [])
+            .map((e) => PersistedPhoto.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        companionUsernames:
+            (json['companion_usernames'] as List<dynamic>? ?? const [])
+                .map((e) => e as String)
+                .toList(),
+      );
 }
 
 /// Persists the active recording and/or a not-yet-confirmed finish to disk
@@ -214,14 +226,19 @@ class RideDraftStore {
 
   Future<void> saveRecording(RideRecordingDraft draft) async {
     final dir = await _dir();
-    await _writeAtomic(File('${dir.path}/active_ride.json'), jsonEncode(draft.toJson()));
+    await _writeAtomic(
+      File('${dir.path}/active_ride.json'),
+      jsonEncode(draft.toJson()),
+    );
   }
 
   Future<RideRecordingDraft?> loadRecording() async {
     final file = File('${(await _dir()).path}/active_ride.json');
     if (!await file.exists()) return null;
     try {
-      return RideRecordingDraft.fromJson(jsonDecode(await file.readAsString()) as Map<String, dynamic>);
+      return RideRecordingDraft.fromJson(
+        jsonDecode(await file.readAsString()) as Map<String, dynamic>,
+      );
     } catch (_) {
       return null;
     }
@@ -234,14 +251,19 @@ class RideDraftStore {
 
   Future<void> savePendingFinish(RidePendingFinish draft) async {
     final dir = await _dir();
-    await _writeAtomic(File('${dir.path}/pending_finish.json'), jsonEncode(draft.toJson()));
+    await _writeAtomic(
+      File('${dir.path}/pending_finish.json'),
+      jsonEncode(draft.toJson()),
+    );
   }
 
   Future<RidePendingFinish?> loadPendingFinish() async {
     final file = File('${(await _dir()).path}/pending_finish.json');
     if (!await file.exists()) return null;
     try {
-      return RidePendingFinish.fromJson(jsonDecode(await file.readAsString()) as Map<String, dynamic>);
+      return RidePendingFinish.fromJson(
+        jsonDecode(await file.readAsString()) as Map<String, dynamic>,
+      );
     } catch (_) {
       return null;
     }

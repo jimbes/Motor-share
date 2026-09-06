@@ -8,7 +8,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format.dart';
+import '../core/models/bike.dart';
 import '../core/models/captured_photo.dart';
+import '../core/repositories/bike_repository.dart';
 import '../core/repositories/ride_repository.dart';
 import '../core/ride_draft_store.dart';
 import '../core/speed_color.dart';
@@ -33,6 +35,8 @@ class _RecordScreenState extends State<RecordScreen> {
   late final RecordingController _controller;
   final _mapController = MapController();
   String? _permissionError;
+  List<Bike> _bikes = [];
+  Bike? _selectedBike;
 
   @override
   void initState() {
@@ -40,6 +44,24 @@ class _RecordScreenState extends State<RecordScreen> {
     _controller = RecordingController(context.read<RideRepository>());
     _controller.addListener(_onTick);
     unawaited(_recoverPersistedRide());
+    unawaited(_loadBikes());
+  }
+
+  /// Lets the rider pick which bike this ride is on before they even tap
+  /// Start, instead of only at the end (backlog FEAT-3) - only shown when
+  /// there's an actual choice to make.
+  Future<void> _loadBikes() async {
+    try {
+      final bikes = await context.read<BikeRepository>().list();
+      if (!mounted) return;
+      setState(() {
+        _bikes = bikes;
+        final defaultBikes = bikes.where((b) => b.isDefault);
+        _selectedBike = defaultBikes.isEmpty ? null : defaultBikes.first;
+      });
+    } catch (_) {
+      // Non-fatal - the rider can still record without picking a bike.
+    }
   }
 
   /// Recovers a ride that survived an app restart - either one still
@@ -59,7 +81,9 @@ class _RecordScreenState extends State<RecordScreen> {
         MaterialPageRoute(
           builder: (_) => RideSummaryScreen.save(
             rideId: pendingFinish.rideId,
-            startedAt: DateTime.now().subtract(Duration(seconds: pendingFinish.durationSeconds)),
+            startedAt: DateTime.now().subtract(
+              Duration(seconds: pendingFinish.durationSeconds),
+            ),
             durationSeconds: pendingFinish.durationSeconds,
             distanceMeters: pendingFinish.distanceMeters,
             avgSpeedKmh: pendingFinish.avgSpeedKmh,
@@ -68,7 +92,13 @@ class _RecordScreenState extends State<RecordScreen> {
             sensorStats: pendingFinish.sensorStats,
             initialPhotos: pendingFinish.photos
                 .where((p) => File(p.path).existsSync())
-                .map((p) => CapturedPhoto(file: XFile(p.path), lat: p.lat, lng: p.lng))
+                .map(
+                  (p) => CapturedPhoto(
+                    file: XFile(p.path),
+                    lat: p.lat,
+                    lng: p.lng,
+                  ),
+                )
                 .toList(),
             initialTitle: pendingFinish.title,
             initialDescription: pendingFinish.description,
@@ -110,7 +140,10 @@ class _RecordScreenState extends State<RecordScreen> {
     if (!mounted) return;
 
     final sensorsEnabled = context.read<SensorSettingsProvider>().enabled;
-    final ok = await _controller.start(sensorsEnabled: sensorsEnabled);
+    final ok = await _controller.start(
+      bikeId: _selectedBike?.id,
+      sensorsEnabled: sensorsEnabled,
+    );
     if (!ok && mounted) {
       setState(
         () => _permissionError = AppLocalizations.of(
@@ -118,6 +151,39 @@ class _RecordScreenState extends State<RecordScreen> {
         )!.recordPermissionError,
       );
     }
+  }
+
+  Future<void> _pickBike() async {
+    final picked = await showModalBottomSheet<Bike?>(
+      context: context,
+      backgroundColor: RedlColors.surface1,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            ..._bikes.map(
+              (bike) => ListTile(
+                leading: const Icon(
+                  Icons.two_wheeler_rounded,
+                  color: RedlColors.textSecondary,
+                ),
+                title: Text(bike.displayName, style: RedlText.body()),
+                trailing: bike.id == _selectedBike?.id
+                    ? const Icon(Icons.check, color: RedlColors.accent)
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(bike),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) setState(() => _selectedBike = picked);
   }
 
   Future<void> _stopAndSave() async {
@@ -170,9 +236,12 @@ class _RecordScreenState extends State<RecordScreen> {
     // Persisted before the save screen even opens, so the ride survives an
     // app kill during that screen too - not just during recording
     // (backlog BUG-2). RideSummaryScreen keeps this up to date afterward.
+    final bikeId = _controller.bikeId;
+
     await RideDraftStore().savePendingFinish(
       RidePendingFinish(
         rideId: rideId,
+        bikeId: bikeId,
         title: AppLocalizations.of(context)!.defaultRideTitle,
         durationSeconds: durationSeconds,
         distanceMeters: distanceMeters,
@@ -181,7 +250,9 @@ class _RecordScreenState extends State<RecordScreen> {
         track: track,
         sensorStats: sensorStats,
         photos: initialPhotos
-            .map((p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng))
+            .map(
+              (p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng),
+            )
             .toList(),
         companionUsernames: const [],
       ),
@@ -202,6 +273,9 @@ class _RecordScreenState extends State<RecordScreen> {
           track: track,
           initialPhotos: initialPhotos,
           sensorStats: sensorStats,
+          // The rider already picked a bike at start - preselect it here
+          // too, while still letting them change it (backlog FEAT-3).
+          initialBikeId: bikeId,
         ),
       ),
     );
@@ -216,7 +290,9 @@ class _RecordScreenState extends State<RecordScreen> {
 
     var cancelled = false;
     void onControllerTick() {
-      if (_controller.rideId != null && mounted) Navigator.of(context).maybePop();
+      if (_controller.rideId != null && mounted) {
+        Navigator.of(context).maybePop();
+      }
     }
 
     _controller.addListener(onControllerTick);
@@ -226,17 +302,28 @@ class _RecordScreenState extends State<RecordScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: RedlColors.surface2,
-        title: Text(l10n.awaitingConnectionTitle, style: RedlText.title(fontSize: 15)),
+        title: Text(
+          l10n.awaitingConnectionTitle,
+          style: RedlText.title(fontSize: 15),
+        ),
         content: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: RedlColors.accent),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: RedlColors.accent,
+              ),
             ),
             const SizedBox(width: 16),
-            Expanded(child: Text(l10n.awaitingConnectionMessage, style: RedlText.body(fontSize: 13))),
+            Expanded(
+              child: Text(
+                l10n.awaitingConnectionMessage,
+                style: RedlText.body(fontSize: 13),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -448,8 +535,15 @@ class _RecordScreenState extends State<RecordScreen> {
                         child: Container(
                           width: 28,
                           height: 28,
-                          decoration: const BoxDecoration(color: RedlColors.surface0, shape: BoxShape.circle),
-                          child: const Icon(Icons.sensors, size: 14, color: RedlColors.accent),
+                          decoration: const BoxDecoration(
+                            color: RedlColors.surface0,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.sensors,
+                            size: 14,
+                            color: RedlColors.accent,
+                          ),
                         ),
                       ),
                     ],
@@ -460,8 +554,15 @@ class _RecordScreenState extends State<RecordScreen> {
                         child: Container(
                           width: 28,
                           height: 28,
-                          decoration: const BoxDecoration(color: RedlColors.surface0, shape: BoxShape.circle),
-                          child: const Icon(Icons.cloud_off_rounded, size: 14, color: RedlColors.accentTint),
+                          decoration: const BoxDecoration(
+                            color: RedlColors.surface0,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.cloud_off_rounded,
+                            size: 14,
+                            color: RedlColors.accentTint,
+                          ),
                         ),
                       ),
                     ],
@@ -492,6 +593,43 @@ class _RecordScreenState extends State<RecordScreen> {
                           ),
                         ),
                       ),
+                    if (_bikes.length > 1) ...[
+                      GestureDetector(
+                        onTap: _pickBike,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: RedlColors.surface1,
+                            borderRadius: BorderRadius.circular(RedlRadius.sm),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.two_wheeler_rounded,
+                                size: 16,
+                                color: RedlColors.textSecondary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _selectedBike?.displayName ?? l10n.bikeNone,
+                                style: RedlText.body(fontSize: 13),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.expand_more,
+                                size: 16,
+                                color: RedlColors.textSecondary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     GestureDetector(
                       onTap: _start,
                       child: Container(

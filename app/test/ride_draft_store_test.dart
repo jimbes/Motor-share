@@ -38,9 +38,10 @@ void main() {
       expect(restored.pendingPois.single.title, 'Viewpoint');
     });
 
-    test('round-trips a known ride id and paused state', () {
+    test('round-trips a known ride id, bike id, and paused state', () {
       final draft = RideRecordingDraft(
         rideId: 42,
+        bikeId: 7,
         recording: false,
         startedAt: DateTime.utc(2026, 9, 6, 10, 30),
         elapsedSeconds: 60,
@@ -55,6 +56,7 @@ void main() {
       final restored = RideRecordingDraft.fromJson(draft.toJson());
 
       expect(restored.rideId, 42);
+      expect(restored.bikeId, 7);
       expect(restored.recording, isFalse);
     });
   });

@@ -68,6 +68,10 @@ class RecordingController extends ChangeNotifier {
   /// [pendingStart]). Recording itself never waits on it.
   int? rideId;
 
+  /// The bike picked before recording started, if any - sent with
+  /// POST /rides/start rather than only at finish time (backlog FEAT-3).
+  int? bikeId;
+
   /// True while `POST /rides/start` hasn't succeeded yet - recording
   /// proceeds locally regardless, and this is retried in the background
   /// until it lands (backlog BUG-2).
@@ -156,9 +160,10 @@ class RecordingController extends ChangeNotifier {
   /// service don't wait on the network. `POST /rides/start` is attempted in
   /// the background and retried until it lands (see [_attemptRemoteStart]),
   /// so a ride started offline is never lost (backlog BUG-2).
-  Future<bool> start({bool sensorsEnabled = false}) async {
+  Future<bool> start({int? bikeId, bool sensorsEnabled = false}) async {
     if (!await _ensurePermission()) return false;
 
+    this.bikeId = bikeId;
     _initForegroundTaskIfNeeded();
     await FlutterForegroundTask.startService(
       serviceId: 501,
@@ -186,7 +191,7 @@ class RecordingController extends ChangeNotifier {
   Future<void> _attemptRemoteStart() async {
     if (rideId != null || state == RecordingState.idle) return;
     try {
-      rideId = await _rideRepository.start();
+      rideId = await _rideRepository.start(bikeId: bikeId);
       _pendingStart = false;
       _cancelStartRetry();
       unawaited(_flushPendingPois());
@@ -227,6 +232,7 @@ class RecordingController extends ChangeNotifier {
           .saveRecording(
             RideRecordingDraft(
               rideId: rideId,
+              bikeId: bikeId,
               recording: state == RecordingState.recording,
               startedAt: startedAt ?? DateTime.now(),
               elapsedSeconds: elapsed.inSeconds,
@@ -235,7 +241,13 @@ class RecordingController extends ChangeNotifier {
               track: List.of(track),
               sensorsEnabled: sensorsActive,
               photos: photos
-                  .map((p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng))
+                  .map(
+                    (p) => PersistedPhoto(
+                      path: p.file.path,
+                      lat: p.lat,
+                      lng: p.lng,
+                    ),
+                  )
                   .toList(),
               pendingPois: _pendingPois
                   .map(
@@ -254,7 +266,8 @@ class RecordingController extends ChangeNotifier {
   }
 
   /// Whether a recording survived an app restart and can be resumed.
-  Future<RideRecordingDraft?> checkForRecoverableRecording() => _draftStore.loadRecording();
+  Future<RideRecordingDraft?> checkForRecoverableRecording() =>
+      _draftStore.loadRecording();
 
   /// Rehydrates and resumes a recording that survived an app restart -
   /// continues GPS/sensor capture and the foreground service right where it
@@ -263,6 +276,7 @@ class RecordingController extends ChangeNotifier {
     if (!await _ensurePermission()) return;
 
     rideId = draft.rideId;
+    bikeId = draft.bikeId;
     _pendingStart = draft.rideId == null;
     startedAt = draft.startedAt;
     distanceMeters = draft.distanceMeters;
@@ -276,7 +290,9 @@ class RecordingController extends ChangeNotifier {
       ..addAll(
         draft.photos
             .where((p) => File(p.path).existsSync())
-            .map((p) => CapturedPhoto(file: XFile(p.path), lat: p.lat, lng: p.lng)),
+            .map(
+              (p) => CapturedPhoto(file: XFile(p.path), lat: p.lat, lng: p.lng),
+            ),
       );
     _pendingPois
       ..clear()
@@ -286,7 +302,9 @@ class RecordingController extends ChangeNotifier {
             lat: p.lat,
             lng: p.lng,
             title: p.title,
-            photo: p.photoPath != null && File(p.photoPath!).existsSync() ? File(p.photoPath!) : null,
+            photo: p.photoPath != null && File(p.photoPath!).existsSync()
+                ? File(p.photoPath!)
+                : null,
           ),
         ),
       );
@@ -312,10 +330,16 @@ class RecordingController extends ChangeNotifier {
     _initForegroundTaskIfNeeded();
     await FlutterForegroundTask.startService(
       serviceId: 501,
-      notificationTitle: draft.recording ? 'Recording your ride' : 'Ride paused',
-      notificationText: '${formatDistanceKm(distanceMeters / 1000)} · ${formatDuration(elapsed)}',
+      notificationTitle: draft.recording
+          ? 'Recording your ride'
+          : 'Ride paused',
+      notificationText:
+          '${formatDistanceKm(distanceMeters / 1000)} · ${formatDuration(elapsed)}',
       notificationButtons: [
-        NotificationButton(id: _pauseResumeButtonId, text: draft.recording ? 'Pause' : 'Resume'),
+        NotificationButton(
+          id: _pauseResumeButtonId,
+          text: draft.recording ? 'Pause' : 'Resume',
+        ),
       ],
       callback: recordingTaskHandlerCallback,
     );
@@ -334,7 +358,9 @@ class RecordingController extends ChangeNotifier {
 
   void _subscribeToSensors() {
     _sensorTracker = SensorStatsTracker();
-    _accelSub = accelerometerEventStream(samplingPeriod: SensorInterval.gameInterval).listen(_sensorTracker!.onData);
+    _accelSub = accelerometerEventStream(
+      samplingPeriod: SensorInterval.gameInterval,
+    ).listen(_sensorTracker!.onData);
   }
 
   void _subscribe() {
@@ -397,7 +423,12 @@ class RecordingController extends ChangeNotifier {
 
     if (id == null) {
       _pendingPois.add(
-        _PendingPoiSubmission(lat: position.latitude, lng: position.longitude, title: title, photo: photo),
+        _PendingPoiSubmission(
+          lat: position.latitude,
+          lng: position.longitude,
+          title: title,
+          photo: photo,
+        ),
       );
       notifyListeners();
       _persist();
@@ -568,6 +599,7 @@ class RecordingController extends ChangeNotifier {
     poisAdded.clear();
     _pendingPois.clear();
     rideId = null;
+    bikeId = null;
     _pendingStart = false;
     distanceMeters = 0;
     currentSpeedKmh = 0;
