@@ -114,9 +114,15 @@ class DetailedStatsScreen extends StatelessWidget {
                     _StatsGridSection(
                       cells: [
                         (
-                          l10n.statMaxLeanAngle,
-                          ride.sensorStats!.maxLeanAngleDeg != null
-                              ? '${ride.sensorStats!.maxLeanAngleDeg!.round()}°'
+                          l10n.statMaxLeanAngleLeft,
+                          ride.sensorStats!.maxLeanAngleLeftDeg != null
+                              ? '${ride.sensorStats!.maxLeanAngleLeftDeg!.round()}°'
+                              : '—',
+                        ),
+                        (
+                          l10n.statMaxLeanAngleRight,
+                          ride.sensorStats!.maxLeanAngleRightDeg != null
+                              ? '${ride.sensorStats!.maxLeanAngleRightDeg!.round()}°'
                               : '—',
                         ),
                         (

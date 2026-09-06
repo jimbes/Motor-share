@@ -15,8 +15,12 @@ void main() {
         maxSpeedKmh: 87.2,
         track: const [TrackPoint(lat: 45.75, lng: 4.85, speed: 42)],
         sensorsEnabled: true,
-        photos: const [PersistedPhoto(path: '/tmp/a.jpg', lat: 45.75, lng: 4.85)],
-        pendingPois: const [PersistedPendingPoi(lat: 45.76, lng: 4.86, title: 'Viewpoint')],
+        photos: const [
+          PersistedPhoto(path: '/tmp/a.jpg', lat: 45.75, lng: 4.85),
+        ],
+        pendingPois: const [
+          PersistedPendingPoi(lat: 45.76, lng: 4.86, title: 'Viewpoint'),
+        ],
       );
 
       final restored = RideRecordingDraft.fromJson(draft.toJson());
@@ -67,7 +71,11 @@ void main() {
         avgSpeedKmh: 60,
         maxSpeedKmh: 120,
         track: const [TrackPoint(lat: 45.75, lng: 4.85)],
-        sensorStats: const RideSensorStats(maxLeanAngleDeg: 38, sampleCount: 500),
+        sensorStats: const RideSensorStats(
+          maxLeanAngleLeftDeg: 12,
+          maxLeanAngleRightDeg: 38,
+          sampleCount: 500,
+        ),
         photos: const [PersistedPhoto(path: '/tmp/b.jpg')],
         companionUsernames: const ['alex', 'sam'],
       );
@@ -80,7 +88,8 @@ void main() {
       expect(restored.bikeId, 3);
       expect(restored.durationSeconds, 3600);
       expect(restored.distanceMeters, 42000);
-      expect(restored.sensorStats?.maxLeanAngleDeg, 38);
+      expect(restored.sensorStats?.maxLeanAngleLeftDeg, 12);
+      expect(restored.sensorStats?.maxLeanAngleRightDeg, 38);
       expect(restored.photos.single.path, '/tmp/b.jpg');
       expect(restored.companionUsernames, ['alex', 'sam']);
     });
