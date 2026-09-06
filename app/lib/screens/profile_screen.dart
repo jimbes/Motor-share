@@ -220,9 +220,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Row(
                           children: [
-                            _ProfileStat(label: l10n.statRides, value: '${_stats?.ridesCount ?? 0}'),
-                            _ProfileStat(label: l10n.statDistance, value: '${(_stats?.distanceKm ?? 0).toStringAsFixed(0)} km'),
-                            _ProfileStat(label: l10n.feedThisWeek, value: '${(_stats?.weekDistanceKm ?? 0).toStringAsFixed(0)} km'),
+                            Expanded(child: _ProfileStat(label: l10n.statRides, value: '${_stats?.ridesCount ?? 0}')),
+                            Expanded(
+                              child: _ProfileStat(
+                                label: l10n.statDistance,
+                                value: '${(_stats?.distanceKm ?? 0).toStringAsFixed(0)} km',
+                              ),
+                            ),
+                            Expanded(
+                              child: _ProfileStat(
+                                label: l10n.feedThisWeek,
+                                value: '${(_stats?.weekDistanceKm ?? 0).toStringAsFixed(0)} km',
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -309,6 +319,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+/// Deliberately not wrapped in an [Expanded] here: callers place it inside a
+/// [Row] and add that themselves. An [Expanded] baked in would throw as soon
+/// as a caller put anything non-[Flex] in between (a [GestureDetector], say),
+/// which in a release build paints a plain grey [ErrorWidget] over the screen.
 class _ProfileStat extends StatelessWidget {
   const _ProfileStat({required this.label, required this.value});
 
@@ -317,14 +331,12 @@ class _ProfileStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(value, style: RedlText.statValue(fontSize: 17)),
-          const SizedBox(height: 4),
-          Text(label, style: RedlText.eyebrow(fontSize: 9)),
-        ],
-      ),
+    return Column(
+      children: [
+        Text(value, style: RedlText.statValue(fontSize: 17)),
+        const SizedBox(height: 4),
+        Text(label, style: RedlText.eyebrow(fontSize: 9)),
+      ],
     );
   }
 }
@@ -347,30 +359,33 @@ class _RewardsBlock extends StatelessWidget {
           decoration: const BoxDecoration(border: Border.symmetric(horizontal: BorderSide(color: RedlColors.divider))),
           child: Row(
             children: [
-              _ProfileStat(label: l10n.profileXpLabel, value: '${rewards.xpTotal}'),
-              _ProfileStat(label: l10n.profileLevelLabel, value: '${rewards.level}'),
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TerritoryMapScreen())),
-                child: _ProfileStat(label: l10n.profileTerritoriesLabel, value: '${rewards.territoriesOwnedCount}'),
+              Expanded(child: _ProfileStat(label: l10n.profileXpLabel, value: '${rewards.xpTotal}')),
+              Expanded(child: _ProfileStat(label: l10n.profileLevelLabel, value: '${rewards.level}')),
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TerritoryMapScreen())),
+                  child: _ProfileStat(label: l10n.profileTerritoriesLabel, value: '${rewards.territoriesOwnedCount}'),
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         if (rewards.badges.isNotEmpty)
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: rewards.badges
-                .map(
-                  (_) => Container(
-                    width: 56,
-                    height: 56,
-                    decoration: const BoxDecoration(color: RedlColors.surface2, shape: BoxShape.circle),
-                    child: const Icon(Icons.military_tech, color: RedlColors.accent, size: 24),
-                  ),
-                )
-                .toList(),
+          SizedBox(
+            height: 56,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: rewards.badges.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, i) => Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(color: RedlColors.surface2, shape: BoxShape.circle),
+                child: const Icon(Icons.military_tech, color: RedlColors.accent, size: 24),
+              ),
+            ),
           ),
         const SizedBox(height: 10),
         GestureDetector(
