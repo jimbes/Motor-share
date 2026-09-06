@@ -52,6 +52,7 @@ dependencies:
   share_plus: ^10.1.4
   sensors_plus: ^6.1.1
   path_provider: ^2.1.5
+  connectivity_plus: ^6.1.0
 
 dev_dependencies:
   flutter_test:

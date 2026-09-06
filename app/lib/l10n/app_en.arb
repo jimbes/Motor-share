@@ -79,6 +79,9 @@
   "statElevation": "ELEVATION",
   "actionPause": "Pause",
   "actionResume": "Resume",
+  "awaitingStartSyncTooltip": "Waiting for a connection to sync this ride",
+  "awaitingConnectionTitle": "Waiting for connection",
+  "awaitingConnectionMessage": "This ride will finish syncing automatically once you're back online. You can keep waiting or leave it to retry in the background.",
 
   "rideCompleteTitle": "Ride Complete",
   "defaultRideTitle": "Morning Ride",

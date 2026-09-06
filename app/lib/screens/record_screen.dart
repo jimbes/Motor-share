@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../core/format.dart';
 import '../core/models/captured_photo.dart';
 import '../core/repositories/ride_repository.dart';
+import '../core/ride_draft_store.dart';
 import '../core/speed_color.dart';
 import '../l10n/app_localizations.dart';
 import '../state/recording_controller.dart';
@@ -38,6 +39,51 @@ class _RecordScreenState extends State<RecordScreen> {
     super.initState();
     _controller = RecordingController(context.read<RideRepository>());
     _controller.addListener(_onTick);
+    unawaited(_recoverPersistedRide());
+  }
+
+  /// Recovers a ride that survived an app restart - either one still
+  /// mid-recording (resumes it in place) or one that finished recording but
+  /// never confirmed `PATCH /rides/{id}/finish` (reopens the save screen
+  /// with everything prefilled and retries automatically). Neither case
+  /// should lose the ride (backlog BUG-2).
+  Future<void> _recoverPersistedRide() async {
+    final store = RideDraftStore();
+    final pendingFinish = await store.loadPendingFinish();
+    if (pendingFinish != null) {
+      // The recording phase is over for this ride - drop any stale
+      // in-progress draft left over for the same attempt.
+      await store.clearRecording();
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => RideSummaryScreen.save(
+            rideId: pendingFinish.rideId,
+            startedAt: DateTime.now().subtract(Duration(seconds: pendingFinish.durationSeconds)),
+            durationSeconds: pendingFinish.durationSeconds,
+            distanceMeters: pendingFinish.distanceMeters,
+            avgSpeedKmh: pendingFinish.avgSpeedKmh,
+            maxSpeedKmh: pendingFinish.maxSpeedKmh,
+            track: pendingFinish.track,
+            sensorStats: pendingFinish.sensorStats,
+            initialPhotos: pendingFinish.photos
+                .where((p) => File(p.path).existsSync())
+                .map((p) => CapturedPhoto(file: XFile(p.path), lat: p.lat, lng: p.lng))
+                .toList(),
+            initialTitle: pendingFinish.title,
+            initialDescription: pendingFinish.description,
+            initialBikeId: pendingFinish.bikeId,
+            recoveredCompanionUsernames: pendingFinish.companionUsernames,
+            autoSave: true,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final recording = await store.loadRecording();
+    if (recording == null || !mounted) return;
+    await _controller.resumeFromDraft(recording);
   }
 
   @override
@@ -109,23 +155,103 @@ class _RecordScreenState extends State<RecordScreen> {
       return;
     }
 
+    final rideId = await _waitForRideId();
+    if (rideId == null || !mounted) return;
+
+    final startedAt = _controller.startedAt!;
+    final durationSeconds = _controller.elapsed.inSeconds;
+    final distanceMeters = _controller.distanceMeters.round();
+    final avgSpeedKmh = _controller.avgSpeedKmh;
+    final maxSpeedKmh = _controller.maxSpeedKmh;
+    final track = List.of(_controller.track);
+    final initialPhotos = List.of(_controller.photos);
+    final sensorStats = _controller.sensorStats;
+
+    // Persisted before the save screen even opens, so the ride survives an
+    // app kill during that screen too - not just during recording
+    // (backlog BUG-2). RideSummaryScreen keeps this up to date afterward.
+    await RideDraftStore().savePendingFinish(
+      RidePendingFinish(
+        rideId: rideId,
+        title: AppLocalizations.of(context)!.defaultRideTitle,
+        durationSeconds: durationSeconds,
+        distanceMeters: distanceMeters,
+        avgSpeedKmh: avgSpeedKmh,
+        maxSpeedKmh: maxSpeedKmh,
+        track: track,
+        sensorStats: sensorStats,
+        photos: initialPhotos
+            .map((p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng))
+            .toList(),
+        companionUsernames: const [],
+      ),
+    );
+    _controller.reset();
+    if (!mounted) return;
+
     final navigator = Navigator.of(context);
     await navigator.push(
       MaterialPageRoute(
         builder: (_) => RideSummaryScreen.save(
-          rideId: _controller.rideId!,
-          startedAt: _controller.startedAt!,
-          durationSeconds: _controller.elapsed.inSeconds,
-          distanceMeters: _controller.distanceMeters.round(),
-          avgSpeedKmh: _controller.avgSpeedKmh,
-          maxSpeedKmh: _controller.maxSpeedKmh,
-          track: List.of(_controller.track),
-          initialPhotos: List.of(_controller.photos),
-          sensorStats: _controller.sensorStats,
+          rideId: rideId,
+          startedAt: startedAt,
+          durationSeconds: durationSeconds,
+          distanceMeters: distanceMeters,
+          avgSpeedKmh: avgSpeedKmh,
+          maxSpeedKmh: maxSpeedKmh,
+          track: track,
+          initialPhotos: initialPhotos,
+          sensorStats: sensorStats,
         ),
       ),
     );
-    _controller.reset();
+  }
+
+  /// Waits for `POST /rides/start` to land if it hasn't yet (the ride
+  /// started offline) - `finish()` needs the backend ride id. Cancelable,
+  /// since the retry keeps running in the background regardless (backlog
+  /// BUG-2).
+  Future<int?> _waitForRideId() async {
+    if (_controller.rideId != null) return _controller.rideId;
+
+    var cancelled = false;
+    void onControllerTick() {
+      if (_controller.rideId != null && mounted) Navigator.of(context).maybePop();
+    }
+
+    _controller.addListener(onControllerTick);
+    final l10n = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: RedlColors.surface2,
+        title: Text(l10n.awaitingConnectionTitle, style: RedlText.title(fontSize: 15)),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: RedlColors.accent),
+            ),
+            const SizedBox(width: 16),
+            Expanded(child: Text(l10n.awaitingConnectionMessage, style: RedlText.body(fontSize: 13))),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              cancelled = true;
+              Navigator.of(dialogContext).pop();
+            },
+            child: Text(l10n.actionCancel),
+          ),
+        ],
+      ),
+    );
+    _controller.removeListener(onControllerTick);
+    return cancelled ? null : _controller.rideId;
   }
 
   Future<void> _capturePhoto() async {
@@ -324,6 +450,18 @@ class _RecordScreenState extends State<RecordScreen> {
                           height: 28,
                           decoration: const BoxDecoration(color: RedlColors.surface0, shape: BoxShape.circle),
                           child: const Icon(Icons.sensors, size: 14, color: RedlColors.accent),
+                        ),
+                      ),
+                    ],
+                    if (_controller.pendingStart) ...[
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: l10n.awaitingStartSyncTooltip,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(color: RedlColors.surface0, shape: BoxShape.circle),
+                          child: const Icon(Icons.cloud_off_rounded, size: 14, color: RedlColors.accentTint),
                         ),
                       ),
                     ],

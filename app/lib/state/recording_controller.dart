@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import '../core/format.dart';
@@ -13,6 +15,7 @@ import '../core/models/point_of_interest.dart';
 import '../core/models/ride_sensor_stats.dart';
 import '../core/models/track_point.dart';
 import '../core/repositories/ride_repository.dart';
+import '../core/ride_draft_store.dart';
 import '../core/sensor_stats_tracker.dart';
 import 'recording_task_handler.dart';
 
@@ -51,6 +54,7 @@ class RecordingController extends ChangeNotifier {
   }
 
   final RideRepository _rideRepository;
+  final RideDraftStore _draftStore = RideDraftStore();
 
   RecordingState state = RecordingState.idle;
   final List<TrackPoint> track = [];
@@ -59,10 +63,18 @@ class RecordingController extends ChangeNotifier {
   final List<_PendingPoiSubmission> _pendingPois = [];
   bool _flushingPois = false;
 
-  /// The backend ride id, obtained from POST /rides/start the moment
-  /// recording begins - so POIs can be attached before the ride is
-  /// finished/published (see ride_repository.dart).
+  /// The backend ride id, obtained from POST /rides/start - either right
+  /// away, or once connectivity comes back if the ride started offline (see
+  /// [pendingStart]). Recording itself never waits on it.
   int? rideId;
+
+  /// True while `POST /rides/start` hasn't succeeded yet - recording
+  /// proceeds locally regardless, and this is retried in the background
+  /// until it lands (backlog BUG-2).
+  bool _pendingStart = false;
+  bool get pendingStart => _pendingStart;
+  Timer? _startRetryTimer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   double distanceMeters = 0;
   double currentSpeedKmh = 0;
@@ -140,14 +152,12 @@ class RecordingController extends ChangeNotifier {
     }
   }
 
+  /// Starts recording immediately - GPS/sensor capture and the foreground
+  /// service don't wait on the network. `POST /rides/start` is attempted in
+  /// the background and retried until it lands (see [_attemptRemoteStart]),
+  /// so a ride started offline is never lost (backlog BUG-2).
   Future<bool> start({bool sensorsEnabled = false}) async {
     if (!await _ensurePermission()) return false;
-
-    try {
-      rideId = await _rideRepository.start();
-    } catch (_) {
-      return false;
-    }
 
     _initForegroundTaskIfNeeded();
     await FlutterForegroundTask.startService(
@@ -166,8 +176,160 @@ class RecordingController extends ChangeNotifier {
     _subscribe();
     _startTicker();
     if (sensorsEnabled) _subscribeToSensors();
+    _persist();
     notifyListeners();
+
+    unawaited(_attemptRemoteStart());
     return true;
+  }
+
+  Future<void> _attemptRemoteStart() async {
+    if (rideId != null || state == RecordingState.idle) return;
+    try {
+      rideId = await _rideRepository.start();
+      _pendingStart = false;
+      _cancelStartRetry();
+      unawaited(_flushPendingPois());
+    } catch (_) {
+      _pendingStart = true;
+      _scheduleStartRetry();
+    }
+    _persist();
+    notifyListeners();
+  }
+
+  void _scheduleStartRetry() {
+    _startRetryTimer?.cancel();
+    _startRetryTimer = Timer(const Duration(seconds: 15), _attemptRemoteStart);
+    _connectivitySub ??= Connectivity().onConnectivityChanged.listen((results) {
+      if (_pendingStart && !results.contains(ConnectivityResult.none)) {
+        _attemptRemoteStart();
+      }
+    });
+  }
+
+  void _cancelStartRetry() {
+    _startRetryTimer?.cancel();
+    _startRetryTimer = null;
+    unawaited(_connectivitySub?.cancel());
+    _connectivitySub = null;
+  }
+
+  /// Writes the current recording to disk so it survives an app kill or
+  /// crash, not just an in-memory session (backlog BUG-2). Best-effort - a
+  /// local disk write failure shouldn't interrupt recording.
+  void _persist() {
+    if (state == RecordingState.idle || state == RecordingState.stopped) {
+      return;
+    }
+    unawaited(
+      _draftStore
+          .saveRecording(
+            RideRecordingDraft(
+              rideId: rideId,
+              recording: state == RecordingState.recording,
+              startedAt: startedAt ?? DateTime.now(),
+              elapsedSeconds: elapsed.inSeconds,
+              distanceMeters: distanceMeters,
+              maxSpeedKmh: maxSpeedKmh,
+              track: List.of(track),
+              sensorsEnabled: sensorsActive,
+              photos: photos
+                  .map((p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng))
+                  .toList(),
+              pendingPois: _pendingPois
+                  .map(
+                    (p) => PersistedPendingPoi(
+                      lat: p.lat,
+                      lng: p.lng,
+                      title: p.title,
+                      photoPath: p.photo?.path,
+                    ),
+                  )
+                  .toList(),
+            ),
+          )
+          .catchError((_) {}),
+    );
+  }
+
+  /// Whether a recording survived an app restart and can be resumed.
+  Future<RideRecordingDraft?> checkForRecoverableRecording() => _draftStore.loadRecording();
+
+  /// Rehydrates and resumes a recording that survived an app restart -
+  /// continues GPS/sensor capture and the foreground service right where it
+  /// left off, instead of losing it (backlog BUG-2).
+  Future<void> resumeFromDraft(RideRecordingDraft draft) async {
+    if (!await _ensurePermission()) return;
+
+    rideId = draft.rideId;
+    _pendingStart = draft.rideId == null;
+    startedAt = draft.startedAt;
+    distanceMeters = draft.distanceMeters;
+    maxSpeedKmh = draft.maxSpeedKmh;
+    elapsed = Duration(seconds: draft.elapsedSeconds);
+    track
+      ..clear()
+      ..addAll(draft.track);
+    photos
+      ..clear()
+      ..addAll(
+        draft.photos
+            .where((p) => File(p.path).existsSync())
+            .map((p) => CapturedPhoto(file: XFile(p.path), lat: p.lat, lng: p.lng)),
+      );
+    _pendingPois
+      ..clear()
+      ..addAll(
+        draft.pendingPois.map(
+          (p) => _PendingPoiSubmission(
+            lat: p.lat,
+            lng: p.lng,
+            title: p.title,
+            photo: p.photoPath != null && File(p.photoPath!).existsSync() ? File(p.photoPath!) : null,
+          ),
+        ),
+      );
+
+    if (track.isNotEmpty) {
+      final last = track.last;
+      final synthetic = Position(
+        latitude: last.lat,
+        longitude: last.lng,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: last.alt ?? 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: (last.speed ?? 0) / 3.6,
+        speedAccuracy: 0,
+      );
+      _lastKept = synthetic;
+      _lastPosition = synthetic;
+    }
+
+    _initForegroundTaskIfNeeded();
+    await FlutterForegroundTask.startService(
+      serviceId: 501,
+      notificationTitle: draft.recording ? 'Recording your ride' : 'Ride paused',
+      notificationText: '${formatDistanceKm(distanceMeters / 1000)} · ${formatDuration(elapsed)}',
+      notificationButtons: [
+        NotificationButton(id: _pauseResumeButtonId, text: draft.recording ? 'Pause' : 'Resume'),
+      ],
+      callback: recordingTaskHandlerCallback,
+    );
+
+    state = draft.recording ? RecordingState.recording : RecordingState.paused;
+    _subscribe();
+    if (draft.recording) {
+      _lastResumeTime = DateTime.now();
+      _startTicker();
+    }
+    if (draft.sensorsEnabled) _subscribeToSensors();
+    if (_pendingStart) unawaited(_attemptRemoteStart());
+    _persist();
+    notifyListeners();
   }
 
   void _subscribeToSensors() {
@@ -220,16 +382,27 @@ class RecordingController extends ChangeNotifier {
     );
 
     notifyListeners();
+    _persist();
     unawaited(_flushPendingPois());
   }
 
   /// Adds a point of interest at the rider's current position, without
-  /// pausing GPS tracking. Sent immediately; queued locally and retried on
-  /// the next GPS fix if the request fails (offline, timeout, ...).
+  /// pausing GPS tracking. Sent immediately if the ride id is known;
+  /// otherwise (or if the request fails - offline, timeout, ...) queued
+  /// locally and retried on the next GPS fix or once the ride id lands.
   Future<void> addPoi({String? title, File? photo}) async {
     final position = _lastPosition;
+    if (position == null) return;
     final id = rideId;
-    if (position == null || id == null) return;
+
+    if (id == null) {
+      _pendingPois.add(
+        _PendingPoiSubmission(lat: position.latitude, lng: position.longitude, title: title, photo: photo),
+      );
+      notifyListeners();
+      _persist();
+      return;
+    }
 
     try {
       final poi = await _rideRepository.addPoi(
@@ -251,6 +424,7 @@ class RecordingController extends ChangeNotifier {
       );
     }
     notifyListeners();
+    _persist();
   }
 
   Future<void> _flushPendingPois() async {
@@ -279,17 +453,21 @@ class RecordingController extends ChangeNotifier {
       ..addAll(stillPending);
     _flushingPois = false;
     notifyListeners();
+    _persist();
   }
 
   /// Abandons the ride started with [start] without publishing it.
   Future<void> discard() async {
+    _cancelStartRetry();
     final id = rideId;
-    if (id == null) return;
-    try {
-      await _rideRepository.discard(id);
-    } catch (_) {
-      // Best-effort - an orphaned in_progress ride is harmless (never shown to anyone but its owner).
+    if (id != null) {
+      try {
+        await _rideRepository.discard(id);
+      } catch (_) {
+        // Best-effort - an orphaned in_progress ride is harmless (never shown to anyone but its owner).
+      }
     }
+    await _draftStore.clearRecording();
   }
 
   void _startTicker() {
@@ -335,6 +513,7 @@ class RecordingController extends ChangeNotifier {
     state = RecordingState.paused;
     _updateNotification();
     notifyListeners();
+    _persist();
   }
 
   void resume() {
@@ -346,6 +525,7 @@ class RecordingController extends ChangeNotifier {
     state = RecordingState.recording;
     _updateNotification();
     notifyListeners();
+    _persist();
   }
 
   void stop() {
@@ -373,6 +553,7 @@ class RecordingController extends ChangeNotifier {
   void addPhoto(CapturedPhoto photo) {
     photos.add(photo);
     notifyListeners();
+    _persist();
   }
 
   void reset() {
@@ -381,11 +562,13 @@ class RecordingController extends ChangeNotifier {
     _accelSub = null;
     _sensorTracker = null;
     _ticker?.cancel();
+    _cancelStartRetry();
     track.clear();
     photos.clear();
     poisAdded.clear();
     _pendingPois.clear();
     rideId = null;
+    _pendingStart = false;
     distanceMeters = 0;
     currentSpeedKmh = 0;
     maxSpeedKmh = 0;
@@ -395,6 +578,7 @@ class RecordingController extends ChangeNotifier {
     _lastPosition = null;
     _lastResumeTime = null;
     state = RecordingState.idle;
+    unawaited(_draftStore.clearRecording());
     notifyListeners();
   }
 
@@ -404,6 +588,7 @@ class RecordingController extends ChangeNotifier {
     _positionSub?.cancel();
     _accelSub?.cancel();
     _ticker?.cancel();
+    _cancelStartRetry();
     super.dispose();
   }
 }

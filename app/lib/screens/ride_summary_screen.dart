@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,6 +20,7 @@ import '../core/models/track_point.dart';
 import '../core/models/user_summary.dart';
 import '../core/repositories/bike_repository.dart';
 import '../core/repositories/ride_repository.dart';
+import '../core/ride_draft_store.dart';
 import '../core/speed_color.dart';
 import '../l10n/app_localizations.dart';
 import '../state/auth_provider.dart';
@@ -43,6 +46,11 @@ class RideSummaryScreen extends StatefulWidget {
     required this.track,
     this.initialPhotos = const [],
     this.sensorStats,
+    this.initialTitle,
+    this.initialDescription,
+    this.initialBikeId,
+    this.recoveredCompanionUsernames = const [],
+    this.autoSave = false,
   }) : _mode = _Mode.save,
        justFinishedRewards = null;
 
@@ -58,7 +66,12 @@ class RideSummaryScreen extends StatefulWidget {
        maxSpeedKmh = null,
        track = null,
        initialPhotos = const [],
-       sensorStats = null;
+       sensorStats = null,
+       initialTitle = null,
+       initialDescription = null,
+       initialBikeId = null,
+       recoveredCompanionUsernames = const [],
+       autoSave = false;
 
   final _Mode _mode;
   final int rideId;
@@ -71,6 +84,21 @@ class RideSummaryScreen extends StatefulWidget {
   final List<TrackPoint>? track;
   final List<CapturedPhoto> initialPhotos;
   final RideSensorStats? sensorStats;
+
+  /// Prefilled when reopening a save that failed to finish before an app
+  /// restart, so the rider's title/description/bike aren't lost along with
+  /// the retry (backlog BUG-2).
+  final String? initialTitle;
+  final String? initialDescription;
+  final int? initialBikeId;
+
+  /// Companions tagged on a previous (interrupted) save attempt - reapplied
+  /// once the retry succeeds, even though they aren't shown as chips.
+  final List<String> recoveredCompanionUsernames;
+
+  /// True when reopened for a recovered pending finish - triggers an
+  /// immediate save attempt instead of waiting for the rider to tap Save.
+  final bool autoSave;
 
   @override
   State<RideSummaryScreen> createState() => _RideSummaryScreenState();
@@ -89,6 +117,10 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   final List<UserSummary> _selectedCompanions = [];
   bool _saving = false;
   String? _saveError;
+  bool _finishConfirmed = false;
+  final _draftStore = RideDraftStore();
+  Timer? _retryTimer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   // View mode.
   Ride? _ride;
@@ -103,7 +135,21 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   void initState() {
     super.initState();
     if (_isSaveMode) {
+      if (widget.initialTitle != null) {
+        _titleController.text = widget.initialTitle!;
+        _defaultTitleSet = true;
+      }
+      if (widget.initialDescription != null) {
+        _descriptionController.text = widget.initialDescription!;
+      }
       _loadBikes();
+      _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+        if (!mounted || _saving || _saveError == null) return;
+        if (!results.contains(ConnectivityResult.none)) _save();
+      });
+      if (widget.autoSave) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _save());
+      }
     } else {
       _loadRide();
     }
@@ -123,6 +169,14 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _commentController.dispose();
+    _retryTimer?.cancel();
+    _connectivitySub?.cancel();
+    if (_isSaveMode && !_saving && !_finishConfirmed) {
+      // The rider backed out of this save without it ever completing -
+      // treat it the same as the pre-existing "leave without saving"
+      // behavior and drop the local safety copy with it.
+      unawaited(_draftStore.clearPendingFinish());
+    }
     super.dispose();
   }
 
@@ -132,8 +186,13 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       if (mounted) {
         setState(() {
           _bikes = bikes;
-          final defaultBikes = bikes.where((b) => b.isDefault);
-          _selectedBike = defaultBikes.isEmpty ? null : defaultBikes.first;
+          if (widget.initialBikeId != null) {
+            final match = bikes.where((b) => b.id == widget.initialBikeId);
+            _selectedBike = match.isEmpty ? null : match.first;
+          } else {
+            final defaultBikes = bikes.where((b) => b.isDefault);
+            _selectedBike = defaultBikes.isEmpty ? null : defaultBikes.first;
+          }
         });
       }
     } catch (_) {
@@ -196,13 +255,42 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       _saveError = null;
     });
 
+    final repo = context.read<RideRepository>();
+    final bikeId = _selectedBike?.id ?? widget.initialBikeId;
+    final description = _descriptionController.text.trim();
+    final companionUsernames = <String>{
+      ..._selectedCompanions.map((c) => c.username).whereType<String>(),
+      ...widget.recoveredCompanionUsernames,
+    };
+
+    // Persisted before the network call so a kill mid-attempt (or a failure
+    // followed by one) still leaves this ride recoverable on next launch
+    // (backlog BUG-2). Cleared once `finish()` actually succeeds below.
+    await _draftStore.savePendingFinish(
+      RidePendingFinish(
+        rideId: widget.rideId,
+        title: _titleController.text.trim(),
+        description: description.isEmpty ? null : description,
+        bikeId: bikeId,
+        durationSeconds: widget.durationSeconds!,
+        distanceMeters: widget.distanceMeters!,
+        avgSpeedKmh: widget.avgSpeedKmh!,
+        maxSpeedKmh: widget.maxSpeedKmh!,
+        track: widget.track!,
+        sensorStats: widget.sensorStats,
+        photos: _selectedPhotos
+            .map((p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng))
+            .toList(),
+        companionUsernames: companionUsernames.toList(),
+      ),
+    );
+
     try {
-      final repo = context.read<RideRepository>();
       final result = await repo.finish(
         widget.rideId,
-        bikeId: _selectedBike?.id,
+        bikeId: bikeId,
         title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
+        description: description,
         durationSeconds: widget.durationSeconds!,
         distanceMeters: widget.distanceMeters!,
         avgSpeedKmh: widget.avgSpeedKmh!,
@@ -211,6 +299,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         sensorStats: widget.sensorStats,
       );
       final ride = result.ride;
+      _finishConfirmed = true;
 
       for (final photo in _selectedPhotos) {
         await repo.uploadPhoto(
@@ -221,11 +310,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         );
       }
 
-      for (final companion in _selectedCompanions) {
-        if (companion.username != null) {
-          await repo.addParticipant(ride.id, companion.username!);
-        }
+      for (final username in companionUsernames) {
+        await repo.addParticipant(ride.id, username);
       }
+
+      await _draftStore.clearPendingFinish();
 
       if (mounted) {
         final navigator = Navigator.of(context);
@@ -240,10 +329,23 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         );
       }
     } catch (e) {
-      if (mounted) setState(() => _saveError = apiErrorMessage(context, e));
+      if (mounted) {
+        setState(() => _saveError = apiErrorMessage(context, e));
+        if (isNetworkError(e)) _scheduleRetry();
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  /// Falls back to a fixed-interval retry alongside the connectivity
+  /// listener in [initState], in case a platform misses a connectivity
+  /// change event (backlog BUG-2).
+  void _scheduleRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = Timer(const Duration(seconds: 20), () {
+      if (mounted && !_saving) _save();
+    });
   }
 
   Future<void> _toggleLike() async {

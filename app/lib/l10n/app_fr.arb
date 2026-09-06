@@ -54,6 +54,9 @@
   "statElevation": "DÉNIVELÉ",
   "actionPause": "Pause",
   "actionResume": "Reprendre",
+  "awaitingStartSyncTooltip": "En attente d'une connexion pour synchroniser ce trajet",
+  "awaitingConnectionTitle": "En attente de connexion",
+  "awaitingConnectionMessage": "Ce trajet finira de se synchroniser automatiquement dès que vous serez de nouveau en ligne. Vous pouvez patienter ou laisser la synchronisation continuer en arrière-plan.",
 
   "rideCompleteTitle": "Trajet terminé",
   "defaultRideTitle": "Balade matinale",

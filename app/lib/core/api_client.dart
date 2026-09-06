@@ -40,9 +40,20 @@ String apiErrorMessage(BuildContext context, Object error) {
       }
       if (data['message'] != null) return data['message'].toString();
     }
-    if (error.type == DioExceptionType.connectionTimeout || error.type == DioExceptionType.connectionError) {
+    if (isNetworkError(error)) {
       return AppLocalizations.of(context)!.apiErrorNetwork;
     }
   }
   return AppLocalizations.of(context)!.apiErrorGeneric;
 }
+
+/// True for a failure that never reached the server (offline, timed out,
+/// DNS/connection refused) - as opposed to a validation or auth error the
+/// server did respond with. Used to decide whether it's worth auto-retrying
+/// once the connection comes back (backlog BUG-2).
+bool isNetworkError(Object error) =>
+    error is DioException &&
+    (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.receiveTimeout);
