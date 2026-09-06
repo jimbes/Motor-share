@@ -219,9 +219,16 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Row(
                             children: [
-                              _ProfileStat(label: l10n.statRides, value: '${_profile!.ridesCount}'),
-                              _ProfileStat(label: l10n.statDistance, value: '${_profile!.distanceKm.toStringAsFixed(0)} km'),
-                              _ProfileStat(label: l10n.statFollowers, value: '${_profile!.followersCount}'),
+                              Expanded(child: _ProfileStat(label: l10n.statRides, value: '${_profile!.ridesCount}')),
+                              Expanded(
+                                child: _ProfileStat(
+                                  label: l10n.statDistance,
+                                  value: '${_profile!.distanceKm.toStringAsFixed(0)} km',
+                                ),
+                              ),
+                              Expanded(
+                                child: _ProfileStat(label: l10n.statFollowers, value: '${_profile!.followersCount}'),
+                              ),
                             ],
                           ),
                         ),
@@ -257,6 +264,10 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   }
 }
 
+/// Deliberately not wrapped in an [Expanded] here: callers place it inside a
+/// [Row] and add that themselves. An [Expanded] baked in would throw as soon
+/// as a caller put anything non-[Flex] in between (a [GestureDetector], say),
+/// which in a release build paints a plain grey [ErrorWidget] over the screen.
 class _ProfileStat extends StatelessWidget {
   const _ProfileStat({required this.label, required this.value});
 
@@ -265,14 +276,12 @@ class _ProfileStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(value, style: RedlText.statValue(fontSize: 17)),
-          const SizedBox(height: 4),
-          Text(label, style: RedlText.eyebrow(fontSize: 9)),
-        ],
-      ),
+    return Column(
+      children: [
+        Text(value, style: RedlText.statValue(fontSize: 17)),
+        const SizedBox(height: 4),
+        Text(label, style: RedlText.eyebrow(fontSize: 9)),
+      ],
     );
   }
 }
