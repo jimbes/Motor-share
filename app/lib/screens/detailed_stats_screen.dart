@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -111,37 +112,36 @@ class DetailedStatsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   if (ride.sensorStats != null)
-                    _StatsGridSection(
-                      cells: [
-                        (
-                          l10n.statMaxLeanAngleLeft,
-                          ride.sensorStats!.maxLeanAngleLeftDeg != null
-                              ? '${ride.sensorStats!.maxLeanAngleLeftDeg!.round()}°'
-                              : '—',
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _MinMaxGaugeCard(
+                          label: l10n.statLeanAngleGaugeLabel,
+                          leftLabel: l10n.directionLeftLabel,
+                          rightLabel: l10n.directionRightLabel,
+                          leftValue: ride.sensorStats!.maxLeanAngleLeftDeg,
+                          rightValue: ride.sensorStats!.maxLeanAngleRightDeg,
+                          unit: '°',
                         ),
-                        (
-                          l10n.statMaxLeanAngleRight,
-                          ride.sensorStats!.maxLeanAngleRightDeg != null
-                              ? '${ride.sensorStats!.maxLeanAngleRightDeg!.round()}°'
-                              : '—',
+                        const SizedBox(height: 10),
+                        _MinMaxGaugeCard(
+                          label: l10n.statLateralGGaugeLabel,
+                          leftLabel: l10n.directionLeftLabel,
+                          rightLabel: l10n.directionRightLabel,
+                          leftValue: ride.sensorStats!.maxLateralGLeft,
+                          rightValue: ride.sensorStats!.maxLateralGRight,
+                          unit: 'g',
+                          decimals: 2,
                         ),
-                        (
-                          l10n.statMaxBrakeG,
-                          ride.sensorStats!.maxBrakeG != null
-                              ? '${ride.sensorStats!.maxBrakeG!.toStringAsFixed(2)} g'
-                              : '—',
-                        ),
-                        (
-                          l10n.statMaxAccelG,
-                          ride.sensorStats!.maxAccelG != null
-                              ? '${ride.sensorStats!.maxAccelG!.toStringAsFixed(2)} g'
-                              : '—',
-                        ),
-                        (
-                          l10n.statMaxLateralG,
-                          ride.sensorStats!.maxLateralG != null
-                              ? '${ride.sensorStats!.maxLateralG!.toStringAsFixed(2)} g'
-                              : '—',
+                        const SizedBox(height: 10),
+                        _MinMaxGaugeCard(
+                          label: l10n.statBrakeAccelGaugeLabel,
+                          leftLabel: l10n.axisBrakingLabel,
+                          rightLabel: l10n.axisAccelerationLabel,
+                          leftValue: ride.sensorStats!.maxBrakeG,
+                          rightValue: ride.sensorStats!.maxAccelG,
+                          unit: 'g',
+                          decimals: 2,
                         ),
                       ],
                     )
@@ -265,6 +265,124 @@ class _ShareableRecapCard extends StatelessWidget {
           Text(
             value,
             style: RedlText.statValue(fontSize: 16, color: RedlColors.accent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A two-sided min/max bar for a "Style de conduite" stat whose two poles
+/// (left/right lean, braking/acceleration, ...) come from the same signed
+/// axis - one number for each direction rather than a single aggregate
+/// (backlog FEAT-1). The bar auto-scales to whichever side reached
+/// further this ride, so a mild ride and a spirited one both fill the
+/// card meaningfully instead of always maxing out or barely showing.
+class _MinMaxGaugeCard extends StatelessWidget {
+  const _MinMaxGaugeCard({
+    required this.label,
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.leftValue,
+    required this.rightValue,
+    required this.unit,
+    this.decimals = 0,
+  });
+
+  final String label;
+  final String leftLabel;
+  final String rightLabel;
+  final double? leftValue;
+  final double? rightValue;
+  final String unit;
+  final int decimals;
+
+  String _format(double? value) =>
+      value == null ? '—' : '${value.toStringAsFixed(decimals)}$unit';
+
+  @override
+  Widget build(BuildContext context) {
+    final left = leftValue ?? 0;
+    final right = rightValue ?? 0;
+    final scale = math.max(math.max(left, right), 0.001);
+    final leftFraction = (left / scale).clamp(0.0, 1.0);
+    final rightFraction = (right / scale).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: RedlColors.surface2,
+        borderRadius: BorderRadius.circular(RedlRadius.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(label, style: RedlText.eyebrow(fontSize: 9)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_format(leftValue), style: RedlText.statValue(fontSize: 16)),
+              Text(
+                _format(rightValue),
+                style: RedlText.statValue(fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: FractionallySizedBox(
+                      widthFactor: leftFraction,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: RedlColors.textSecondary,
+                          borderRadius: BorderRadius.horizontal(
+                            left: Radius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Container(width: 2, height: 14, color: RedlColors.textMuted),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: rightFraction,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: RedlColors.accent,
+                          borderRadius: BorderRadius.horizontal(
+                            right: Radius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                leftLabel,
+                style: RedlText.body(fontSize: 9, color: RedlColors.textMuted),
+              ),
+              Text(
+                rightLabel,
+                style: RedlText.body(fontSize: 9, color: RedlColors.textMuted),
+              ),
+            ],
           ),
         ],
       ),

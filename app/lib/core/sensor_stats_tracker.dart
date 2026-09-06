@@ -28,7 +28,8 @@ class SensorStatsTracker {
 
   double _maxLeanAngleLeftDeg = 0;
   double _maxLeanAngleRightDeg = 0;
-  double _maxLateralG = 0;
+  double _maxLateralGLeft = 0;
+  double _maxLateralGRight = 0;
   double _maxAccelG = 0;
   double _maxBrakeG = 0;
   int _sampleCount = 0;
@@ -41,15 +42,17 @@ class SensorStatsTracker {
       _baselineAngleDeg = rawAngleDeg;
     } else {
       final leanDeg = _normalizeAngleDeg(rawAngleDeg - _baselineAngleDeg!);
+      // The cornering g-force shares the same lean direction, so it's
+      // attributed to left/right the same way (backlog FEAT-1).
+      final lateralG = event.x.abs() / _gravityMs2;
       if (leanDeg >= 0) {
         _maxLeanAngleRightDeg = math.max(_maxLeanAngleRightDeg, leanDeg);
+        _maxLateralGRight = math.max(_maxLateralGRight, lateralG);
       } else {
         _maxLeanAngleLeftDeg = math.max(_maxLeanAngleLeftDeg, -leanDeg);
+        _maxLateralGLeft = math.max(_maxLateralGLeft, lateralG);
       }
     }
-
-    final lateralG = event.x.abs() / _gravityMs2;
-    _maxLateralG = math.max(_maxLateralG, lateralG);
 
     // Forward axis: positive is acceleration, negative is braking.
     final forwardG = event.y / _gravityMs2;
@@ -79,7 +82,8 @@ class SensorStatsTracker {
       maxLeanAngleRightDeg: double.parse(
         _maxLeanAngleRightDeg.toStringAsFixed(1),
       ),
-      maxLateralG: double.parse(_maxLateralG.toStringAsFixed(2)),
+      maxLateralGLeft: double.parse(_maxLateralGLeft.toStringAsFixed(2)),
+      maxLateralGRight: double.parse(_maxLateralGRight.toStringAsFixed(2)),
       maxAccelG: double.parse(_maxAccelG.toStringAsFixed(2)),
       maxBrakeG: double.parse(_maxBrakeG.toStringAsFixed(2)),
       sampleCount: _sampleCount,

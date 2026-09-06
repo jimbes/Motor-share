@@ -72,6 +72,20 @@ void main() {
     );
 
     test(
+      'attributes cornering g-force to the same side as the lean that caused it',
+      () {
+        final tracker = SensorStatsTracker();
+        tracker.onData(_tiltedSample(0)); // calibrates upright
+        tracker.onData(_tiltedSample(30)); // right lean
+        tracker.onData(_tiltedSample(-60)); // left lean
+
+        final stats = tracker.snapshot()!;
+        expect(stats.maxLateralGRight, greaterThan(0));
+        expect(stats.maxLateralGLeft, greaterThan(stats.maxLateralGRight!));
+      },
+    );
+
+    test(
       'separates acceleration (positive forward axis) from braking (negative)',
       () {
         final tracker = SensorStatsTracker();
