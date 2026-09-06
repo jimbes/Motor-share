@@ -96,6 +96,23 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                         : RedlColors.textMuted,
                   ),
                 ),
+                if (badge.progressRatio != null) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: badge.progressRatio,
+                      minHeight: 6,
+                      backgroundColor: RedlColors.surface3,
+                      color: RedlColors.accent,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.badgeStepProgressLabel(badge.progress!, badge.threshold!),
+                    style: RedlText.meta(color: RedlColors.textSecondary),
+                  ),
+                ],
               ],
             ),
           ),
@@ -141,61 +158,92 @@ class _BadgeCatalogScreenState extends State<BadgeCatalogScreen> {
                         color: RedlColors.accent,
                       ),
                     ),
+                    if (earnedCount > 0) ...[
+                      const SizedBox(height: 24),
+                      Text(l10n.badgeSectionEarned, style: RedlText.eyebrow()),
+                      const SizedBox(height: 12),
+                      _BadgeGrid(
+                        badges: badges.where((b) => b.earned).toList(),
+                        onTap: _showDetail,
+                      ),
+                    ],
                     const SizedBox(height: 24),
-                    GridView.count(
-                      crossAxisCount: 3,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      children: badges
-                          .map(
-                            (badge) => GestureDetector(
-                              onTap: () => _showDetail(badge),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 64,
-                                    height: 64,
-                                    decoration: BoxDecoration(
-                                      color: RedlColors.surface2,
-                                      borderRadius: BorderRadius.circular(
-                                        RedlRadius.sm,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.military_tech,
-                                      size: 28,
-                                      color: badge.earned
-                                          ? RedlColors.accent
-                                          : RedlColors.textMuted.withValues(
-                                              alpha: 0.4,
-                                            ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    badge.name,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: RedlText.eyebrow(
-                                      fontSize: 8,
-                                      color: badge.earned
-                                          ? RedlColors.baseAlt
-                                          : RedlColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
+                    Text(l10n.badgeSectionLocked, style: RedlText.eyebrow()),
+                    const SizedBox(height: 12),
+                    if (badges.isNotEmpty && earnedCount == badges.length)
+                      Text(
+                        l10n.badgeSectionLockedEmpty,
+                        style: RedlText.body(
+                          fontSize: 13,
+                          color: RedlColors.textSecondary,
+                        ),
+                      )
+                    else
+                      _BadgeGrid(
+                        badges: badges.where((b) => !b.earned).toList(),
+                        onTap: _showDetail,
+                      ),
                   ],
                 ),
               ),
       ),
+    );
+  }
+}
+
+class _BadgeGrid extends StatelessWidget {
+  const _BadgeGrid({required this.badges, required this.onTap});
+
+  final List<BadgeInfo> badges;
+  final void Function(BadgeInfo badge) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: badges
+          .map(
+            (badge) => GestureDetector(
+              onTap: () => onTap(badge),
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: RedlColors.surface2,
+                      borderRadius: BorderRadius.circular(RedlRadius.sm),
+                    ),
+                    child: Icon(
+                      Icons.military_tech,
+                      size: 28,
+                      color: badge.earned
+                          ? RedlColors.accent
+                          : RedlColors.textMuted.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    badge.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: RedlText.eyebrow(
+                      fontSize: 8,
+                      color: badge.earned
+                          ? RedlColors.baseAlt
+                          : RedlColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }

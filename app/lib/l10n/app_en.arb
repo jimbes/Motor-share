@@ -286,6 +286,16 @@
   },
   "badgeNotEarnedStatus": "Not earned yet",
   "badgeEarnedOnLabel": "Earned on {date}",
+  "badgeSectionEarned": "EARNED",
+  "badgeSectionLocked": "TO UNLOCK",
+  "badgeSectionLockedEmpty": "Every badge earned. Hats off.",
+  "badgeStepProgressLabel": "{current} / {target}",
+  "@badgeStepProgressLabel": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
 
   "profileRewardsLabel": "REWARDS",
   "profileXpLabel": "XP",
