@@ -1,16 +1,12 @@
-# Analyzes, tests, and builds a debug APK on every push to main and on
-# every pull request targeting it - a debug build needs no signing
-# keystore, but still compiles the full Android project (native/Kotlin
-# code included, e.g. the Android Auto CarAppService integration), so a
-# compile error there is caught here instead of only being discovered
-# on-device, and before a PR is even merged.
+# Analyzes, tests, and builds a debug APK on every push to main - a debug
+# build needs no signing keystore, but still compiles the full Android
+# project (native/Kotlin code included, e.g. the Android Auto
+# CarAppService integration), so a compile error there is caught here
+# instead of only being discovered on-device.
 name: CI
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
