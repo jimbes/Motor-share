@@ -5,12 +5,17 @@
 # instead of only being discovered on-device.
 #
 # Once that's green, the tag-release job auto-bumps the patch version
-# (vX.Y.Z -> vX.Y.Z+1, per the latest git tag) and pushes the new tag -
-# which is exactly what release-apk.yml's own `push: tags: v*.*.*` trigger
-# is watching for, so it takes over from there (signed build, GitHub
-# Release, APK upload) with no duplicated logic here. A minor/major bump
-# is still manual: trigger release-apk.yml by hand (Actions tab -> Release
-# APK -> Run workflow) with the desired version when one's warranted.
+# (vX.Y.Z -> vX.Y.Z+1, per the latest git tag) and dispatches
+# release-apk.yml's workflow_dispatch trigger with it - reusing the exact
+# same path as running it by hand, rather than pushing the tag ourselves:
+# a push made with the default GITHUB_TOKEN does NOT fire other workflows'
+# `on: push` triggers (a deliberate GitHub anti-recursion rule), so
+# release-apk.yml's tag-push trigger would silently never fire for it. An
+# explicit workflow_dispatch call sidesteps that rule entirely, and
+# release-apk.yml already creates the tag itself in that mode. A
+# minor/major bump is still manual: trigger release-apk.yml by hand
+# (Actions tab -> Release APK -> Run workflow) with the desired version
+# when one's warranted.
 name: CI
 
 on:
@@ -56,7 +61,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      actions: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +70,8 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Bump patch version and push the tag
+      - name: Determine the next patch version
+        id: version
         run: |
           latest=$(git tag --list 'v*.*.*' | sort -V | tail -n1)
           if [ -z "$latest" ]; then
@@ -74,7 +81,10 @@ jobs:
             new_tag="v${major}.${minor}.$((patch + 1))"
           fi
           echo "Latest tag: ${latest:-none} -> new tag: $new_tag"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "$new_tag"
-          git push origin "$new_tag"
+          echo "tag=$new_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch the Release APK workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run release-apk.yml --ref main -f version=${{ steps.version.outputs.tag }}
