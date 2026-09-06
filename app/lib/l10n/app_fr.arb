@@ -224,6 +224,16 @@
   },
   "badgeNotEarnedStatus": "Non obtenu",
   "badgeEarnedOnLabel": "Obtenu le {date}",
+  "badgeSectionEarned": "OBTENUS",
+  "badgeSectionLocked": "À DÉBLOQUER",
+  "badgeSectionLockedEmpty": "Tous les badges sont obtenus. Chapeau.",
+  "badgeStepProgressLabel": "{current} / {target}",
+  "@badgeStepProgressLabel": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "target": {"type": "int"}
+    }
+  },
 
   "profileRewardsLabel": "RÉCOMPENSES",
   "profileXpLabel": "XP",
