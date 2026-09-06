@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../core/car_stats_channel.dart';
 import '../core/format.dart';
 import '../core/models/captured_photo.dart';
 import '../core/models/point_of_interest.dart';
@@ -55,6 +56,7 @@ class RecordingController extends ChangeNotifier {
 
   final RideRepository _rideRepository;
   final RideDraftStore _draftStore = RideDraftStore();
+  final CarStatsChannel _carChannel = CarStatsChannel();
 
   RecordingState state = RecordingState.idle;
   final List<TrackPoint> track = [];
@@ -182,6 +184,7 @@ class RecordingController extends ChangeNotifier {
     _startTicker();
     if (sensorsEnabled) _subscribeToSensors();
     _persist();
+    _pushCarStats();
     notifyListeners();
 
     unawaited(_attemptRemoteStart());
@@ -353,6 +356,7 @@ class RecordingController extends ChangeNotifier {
     if (draft.sensorsEnabled) _subscribeToSensors();
     if (_pendingStart) unawaited(_attemptRemoteStart());
     _persist();
+    _pushCarStats();
     notifyListeners();
   }
 
@@ -508,6 +512,7 @@ class RecordingController extends ChangeNotifier {
         _lastResumeTime = DateTime.now();
       }
       _updateNotification();
+      _pushCarStats();
       notifyListeners();
     });
   }
@@ -531,6 +536,19 @@ class RecordingController extends ChangeNotifier {
     );
   }
 
+  /// Pushes live stats to the Android Auto car screen, if one is connected
+  /// (backlog FEAT-4) - a no-op otherwise. Called once a second from the
+  /// ticker, plus immediately on every state change so the car screen
+  /// doesn't wait up to a second to reflect a pause/resume/stop.
+  void _pushCarStats() {
+    _carChannel.pushStats(
+      state: state.name,
+      speedKmh: currentSpeedKmh,
+      distanceKm: distanceMeters / 1000,
+      elapsedLabel: formatDuration(elapsed),
+    );
+  }
+
   void pause() {
     if (state != RecordingState.recording) return;
     _positionSub?.pause();
@@ -543,6 +561,7 @@ class RecordingController extends ChangeNotifier {
     currentSpeedKmh = 0;
     state = RecordingState.paused;
     _updateNotification();
+    _pushCarStats();
     notifyListeners();
     _persist();
   }
@@ -555,6 +574,7 @@ class RecordingController extends ChangeNotifier {
     _startTicker();
     state = RecordingState.recording;
     _updateNotification();
+    _pushCarStats();
     notifyListeners();
     _persist();
   }
@@ -569,6 +589,7 @@ class RecordingController extends ChangeNotifier {
     }
     state = RecordingState.stopped;
     FlutterForegroundTask.stopService();
+    _pushCarStats();
     notifyListeners();
   }
 
@@ -611,6 +632,7 @@ class RecordingController extends ChangeNotifier {
     _lastResumeTime = null;
     state = RecordingState.idle;
     unawaited(_draftStore.clearRecording());
+    _pushCarStats();
     notifyListeners();
   }
 

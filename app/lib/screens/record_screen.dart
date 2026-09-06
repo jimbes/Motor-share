@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../core/car_stats_channel.dart';
 import '../core/format.dart';
 import '../core/models/bike.dart';
 import '../core/models/captured_photo.dart';
@@ -45,6 +46,15 @@ class _RecordScreenState extends State<RecordScreen> {
     _controller.addListener(_onTick);
     unawaited(_recoverPersistedRide());
     unawaited(_loadBikes());
+    // Lets the Android Auto car screen drive the same recording session
+    // the phone shows (backlog FEAT-4) - Stop only ends GPS tracking, since
+    // finishing the save form isn't something to do from behind the wheel.
+    CarStatsChannel().setCommandHandler(
+      onStart: _start,
+      onPause: _controller.pause,
+      onResume: _controller.resume,
+      onStop: _controller.stop,
+    );
   }
 
   /// Lets the rider pick which bike this ride is on before they even tap

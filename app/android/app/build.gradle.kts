@@ -54,3 +54,9 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Android Auto integration (backlog FEAT-4, V1) - the templates used to
+    // show live stats and Start/Pause/Resume/Stop on the car's screen.
+    implementation("androidx.car.app:app:1.4.0")
+}

@@ -53,6 +53,26 @@
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="location"
             android:exported="false" />
+
+        <!-- Android Auto integration (backlog FEAT-4, V1: live stats and
+             Start/Pause/Resume/Stop only, no map). Declares this app as a
+             template-based car app to both Android Automotive OS (the
+             CarAppService intent-filter) and Android Auto phone projection
+             (the automotive_app_desc.xml resource below). -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+        <service
+            android:name="com.besse.redl.car.RedlCarAppService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.IOT" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.car.app.minCarApiLevel"
+                android:value="1" />
+        </service>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

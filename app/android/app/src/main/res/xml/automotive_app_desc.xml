@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Declares this app as a template-based car app for Android Auto phone
+     projection (backlog FEAT-4). Referenced from AndroidManifest.xml via
+     the com.google.android.gms.car.application meta-data. -->
+<automotiveApp>
+    <uses name="template" />
+</automotiveApp>
