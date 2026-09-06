@@ -358,19 +358,19 @@ class _RewardsBlock extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (rewards.badges.isNotEmpty)
-          SizedBox(
-            height: 56,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: rewards.badges.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, i) => Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(color: RedlColors.surface2, shape: BoxShape.circle),
-                child: const Icon(Icons.military_tech, color: RedlColors.accent, size: 24),
-              ),
-            ),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: rewards.badges
+                .map(
+                  (_) => Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(color: RedlColors.surface2, shape: BoxShape.circle),
+                    child: const Icon(Icons.military_tech, color: RedlColors.accent, size: 24),
+                  ),
+                )
+                .toList(),
           ),
         const SizedBox(height: 10),
         GestureDetector(
