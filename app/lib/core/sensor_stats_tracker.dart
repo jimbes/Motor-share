@@ -4,8 +4,12 @@ import 'package:sensors_plus/sensors_plus.dart';
 
 import 'models/ride_sensor_stats.dart';
 
-/// Turns a stream of raw accelerometer samples into the running maxima
-/// stored in [RideSensorStats] (REDL project doc, section 9.5, level 2).
+/// Turns a stream of raw accelerometer samples into the running stats
+/// stored in [RideSensorStats] (REDL project doc, section 9.5, level 2) -
+/// a running maximum for lean angle/braking/acceleration, and the 95th
+/// percentile for cornering g-force (backlog FEAT-2), which is less
+/// skewed by a single unrepresentative spike (e.g. sensors left on in a
+/// car, hitting a pothole) than a raw max.
 ///
 /// This assumes the phone is mounted with its screen facing up and its
 /// "up" (Y) axis pointing toward the front of the bike - a simplifying
@@ -28,11 +32,16 @@ class SensorStatsTracker {
 
   double _maxLeanAngleLeftDeg = 0;
   double _maxLeanAngleRightDeg = 0;
-  double _maxLateralGLeft = 0;
-  double _maxLateralGRight = 0;
   double _maxAccelG = 0;
   double _maxBrakeG = 0;
   int _sampleCount = 0;
+
+  /// Every cornering g-force sample, kept so the 95th percentile can be
+  /// computed at the end of the ride instead of the raw max (backlog
+  /// FEAT-2) - a lone spike (e.g. sensors left on in a car, a pothole)
+  /// would otherwise dominate an entire ride's reading.
+  final List<double> _lateralGLeftSamples = [];
+  final List<double> _lateralGRightSamples = [];
 
   void onData(AccelerometerEvent event) {
     _sampleCount++;
@@ -47,10 +56,10 @@ class SensorStatsTracker {
       final lateralG = event.x.abs() / _gravityMs2;
       if (leanDeg >= 0) {
         _maxLeanAngleRightDeg = math.max(_maxLeanAngleRightDeg, leanDeg);
-        _maxLateralGRight = math.max(_maxLateralGRight, lateralG);
+        _lateralGRightSamples.add(lateralG);
       } else {
         _maxLeanAngleLeftDeg = math.max(_maxLeanAngleLeftDeg, -leanDeg);
-        _maxLateralGLeft = math.max(_maxLateralGLeft, lateralG);
+        _lateralGLeftSamples.add(lateralG);
       }
     }
 
@@ -72,6 +81,14 @@ class SensorStatsTracker {
     return normalized;
   }
 
+  /// The 95th percentile of [samples] (nearest-rank method), or 0 if empty.
+  double _percentile95(List<double> samples) {
+    if (samples.isEmpty) return 0;
+    final sorted = List<double>.of(samples)..sort();
+    final rank = ((sorted.length - 1) * 0.95).round();
+    return sorted[rank];
+  }
+
   RideSensorStats? snapshot() {
     if (_sampleCount == 0) return null;
 
@@ -82,8 +99,12 @@ class SensorStatsTracker {
       maxLeanAngleRightDeg: double.parse(
         _maxLeanAngleRightDeg.toStringAsFixed(1),
       ),
-      maxLateralGLeft: double.parse(_maxLateralGLeft.toStringAsFixed(2)),
-      maxLateralGRight: double.parse(_maxLateralGRight.toStringAsFixed(2)),
+      lateralGLeftP95: double.parse(
+        _percentile95(_lateralGLeftSamples).toStringAsFixed(2),
+      ),
+      lateralGRightP95: double.parse(
+        _percentile95(_lateralGRightSamples).toStringAsFixed(2),
+      ),
       maxAccelG: double.parse(_maxAccelG.toStringAsFixed(2)),
       maxBrakeG: double.parse(_maxBrakeG.toStringAsFixed(2)),
       sampleCount: _sampleCount,

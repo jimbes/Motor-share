@@ -80,8 +80,32 @@ void main() {
         tracker.onData(_tiltedSample(-60)); // left lean
 
         final stats = tracker.snapshot()!;
-        expect(stats.maxLateralGRight, greaterThan(0));
-        expect(stats.maxLateralGLeft, greaterThan(stats.maxLateralGRight!));
+        expect(stats.lateralGRightP95, greaterThan(0));
+        expect(stats.lateralGLeftP95, greaterThan(stats.lateralGRightP95!));
+      },
+    );
+
+    test(
+      'a single unrepresentative g-force spike does not dominate the 95th percentile',
+      () {
+        final tracker = SensorStatsTracker();
+        tracker.onData(_tiltedSample(0)); // calibrates upright
+        // A steady, moderate right lean for most of the ride...
+        for (var i = 0; i < 99; i++) {
+          tracker.onData(_tiltedSample(20));
+        }
+        // ...and one wild outlier (e.g. a pothole, or the phone briefly
+        // slipping in its mount).
+        tracker.onData(_tiltedSample(80));
+
+        final stats = tracker.snapshot()!;
+        // The raw max would be the 80-degree spike's g-force; the p95
+        // instead reflects the steady 20-degree lean that made up the
+        // bulk of the ride.
+        final steadyG = _tiltedSample(20).x.abs() / 9.80665;
+        final spikeG = _tiltedSample(80).x.abs() / 9.80665;
+        expect(stats.lateralGRightP95, closeTo(steadyG, 0.05));
+        expect(stats.lateralGRightP95, lessThan(spikeG));
       },
     );
 
