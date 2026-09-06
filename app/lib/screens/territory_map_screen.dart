@@ -19,6 +19,8 @@ import '../theme/redl_text_styles.dart';
 const _cellHalfSizeMeters = 158.0;
 const _metersPerDegreeLat = 111320.0;
 
+/// Clockwise (per [Polygon.isClockwise]'s sign convention), which is what
+/// the polygon layer's batching optimization expects for a filled polygon.
 List<LatLng> _cellCorners(double centerLat, double centerLng) {
   final dLat = _cellHalfSizeMeters / _metersPerDegreeLat;
   final metersPerDegreeLng =
@@ -27,9 +29,9 @@ List<LatLng> _cellCorners(double centerLat, double centerLng) {
 
   return [
     LatLng(centerLat - dLat, centerLng - dLng),
-    LatLng(centerLat - dLat, centerLng + dLng),
-    LatLng(centerLat + dLat, centerLng + dLng),
     LatLng(centerLat + dLat, centerLng - dLng),
+    LatLng(centerLat + dLat, centerLng + dLng),
+    LatLng(centerLat - dLat, centerLng + dLng),
   ];
 }
 
@@ -62,7 +64,6 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
     } catch (_) {
       // No location fix - stick with the default center.
     }
-    await _loadAround(_center);
   }
 
   Future<void> _recenterOnMine() async {
@@ -75,16 +76,19 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
     _mapController.move(LatLng(avgLat, avgLng), 15);
   }
 
-  Future<void> _loadAround(LatLng center) async {
-    const delta = 0.03;
+  /// Loads every territory cell actually on screen (BUG-1 fix) - queries
+  /// the map's real [bounds] rather than a fixed-size box around its
+  /// center, so zooming out (a much larger visible area) fetches
+  /// accordingly instead of leaving most of the screen without data.
+  Future<void> _loadForBounds(LatLngBounds bounds) async {
     try {
       final territories = await context
           .read<TerritoryRepository>()
           .inBoundingBox(
-            south: center.latitude - delta,
-            west: center.longitude - delta,
-            north: center.latitude + delta,
-            east: center.longitude + delta,
+            south: bounds.south,
+            west: bounds.west,
+            north: bounds.north,
+            east: bounds.east,
           );
       if (mounted) setState(() => _territories = territories);
     } catch (_) {
@@ -159,8 +163,12 @@ class _TerritoryMapScreenState extends State<TerritoryMapScreen> {
             options: MapOptions(
               initialCenter: _center,
               initialZoom: 15,
+              onMapReady: () =>
+                  _loadForBounds(_mapController.camera.visibleBounds),
               onMapEvent: (event) {
-                if (event is MapEventMoveEnd) _loadAround(event.camera.center);
+                if (event is MapEventMoveEnd) {
+                  _loadForBounds(event.camera.visibleBounds);
+                }
               },
             ),
             children: [
