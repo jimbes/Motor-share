@@ -1,14 +1,18 @@
-# Analyzes, tests, and builds a debug APK on every push to the tracked
-# branch - a debug build needs no signing keystore, but still compiles the
-# full Android project (native/Kotlin code included, e.g. the Android Auto
-# CarAppService integration), so a compile error there is caught here
-# instead of only being discovered on-device.
+# Analyzes, tests, and builds a debug APK on every push to main and on
+# every pull request targeting it - a debug build needs no signing
+# keystore, but still compiles the full Android project (native/Kotlin
+# code included, e.g. the Android Auto CarAppService integration), so a
+# compile error there is caught here instead of only being discovered
+# on-device, and before a PR is even merged.
 name: CI
 
 on:
   push:
     branches:
-      - claude/motorbike-tracking-app-lsc7lq
+      - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
