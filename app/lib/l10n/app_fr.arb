@@ -252,5 +252,9 @@
   "batteryOptimizationTitle": "Fiabiliser le suivi",
   "batteryOptimizationMessage": "Certains téléphones (Samsung en particulier) arrêtent agressivement les applications en arrière-plan. Désactivez l'optimisation de batterie pour REDL afin qu'une longue sortie ne soit pas interrompue.",
   "batteryOptimizationAction": "Ouvrir les réglages de batterie",
-  "batteryOptimizationDismiss": "Pas maintenant"
+  "batteryOptimizationDismiss": "Pas maintenant",
+  "batteryOptimizationRowLabel": "Fiabilité du suivi GPS",
+  "batteryOptimizationRowDescriptionOn": "REDL est exempté des économies de batterie : le suivi continue même téléphone verrouillé.",
+  "batteryOptimizationRowDescriptionOff": "Le système peut couper le suivi GPS en cours de route quand l'écran est verrouillé. Corrigez ça une bonne fois.",
+  "batteryOptimizationFixAction": "Corriger"
 }

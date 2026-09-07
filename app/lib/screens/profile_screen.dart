@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../core/models/bike.dart';
@@ -307,6 +309,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
+                    if (defaultTargetPlatform == TargetPlatform.android) ...[
+                      const SizedBox(height: 24),
+                      const _BatteryReliabilityRow(),
+                    ],
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -392,6 +398,94 @@ class _RewardsBlock extends StatelessWidget {
           onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BadgeCatalogScreen())),
           child: Text(l10n.profileViewBadgesAction, style: RedlText.body(fontSize: 13, color: RedlColors.textSecondary)),
         ),
+      ],
+    );
+  }
+}
+
+/// Some OEMs (Samsung especially) aggressively kill a foreground service
+/// anyway, silently cutting a ride's GPS track short partway through - the
+/// same failure the one-shot dialog in battery_optimization_prompt.dart
+/// exists to prevent. That dialog only ever fires once per install and has
+/// no way back once dismissed (or if the OEM quietly re-applies the
+/// restriction after a system update), so this is the persistent,
+/// re-checkable version of the same fix.
+class _BatteryReliabilityRow extends StatefulWidget {
+  const _BatteryReliabilityRow();
+
+  @override
+  State<_BatteryReliabilityRow> createState() => _BatteryReliabilityRowState();
+}
+
+class _BatteryReliabilityRowState extends State<_BatteryReliabilityRow>
+    with WidgetsBindingObserver {
+  bool? _exempt;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Catches the rider coming back from the system settings screen this
+    // row itself opens.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final status = await Permission.ignoreBatteryOptimizations.status;
+    if (mounted) setState(() => _exempt = status.isGranted);
+  }
+
+  Future<void> _fix() async {
+    await Permission.ignoreBatteryOptimizations.request();
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final exempt = _exempt;
+    if (exempt == null) return const SizedBox.shrink();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.batteryOptimizationRowLabel, style: RedlText.body(fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(
+                exempt
+                    ? l10n.batteryOptimizationRowDescriptionOn
+                    : l10n.batteryOptimizationRowDescriptionOff,
+                style: RedlText.meta(color: RedlColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        if (!exempt) ...[
+          const SizedBox(width: 12),
+          TextButton(
+            onPressed: _fix,
+            child: Text(l10n.batteryOptimizationFixAction),
+          ),
+        ] else
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.check_circle, color: RedlColors.accent, size: 20),
+          ),
       ],
     );
   }

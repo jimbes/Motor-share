@@ -314,5 +314,9 @@
   "batteryOptimizationTitle": "Keep tracking reliable",
   "batteryOptimizationMessage": "Some phones (Samsung especially) aggressively stop apps running in the background. Disable battery optimization for REDL so a long ride isn't interrupted.",
   "batteryOptimizationAction": "Open battery settings",
-  "batteryOptimizationDismiss": "Not now"
+  "batteryOptimizationDismiss": "Not now",
+  "batteryOptimizationRowLabel": "GPS tracking reliability",
+  "batteryOptimizationRowDescriptionOn": "REDL is exempt from battery savings - tracking keeps going even with the phone locked.",
+  "batteryOptimizationRowDescriptionOff": "The system can cut GPS tracking mid-ride when the screen is locked. Fix that once and for all.",
+  "batteryOptimizationFixAction": "Fix it"
 }
