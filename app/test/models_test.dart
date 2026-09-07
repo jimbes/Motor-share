@@ -247,6 +247,24 @@ void main() {
       expect(liked.title, ride.title);
     });
 
+    test('hidden defaults to false when absent (older rides, or another rider\'s)', () {
+      final ride = Ride.fromJson(sampleJson());
+      expect(ride.hidden, false);
+    });
+
+    test('parses hidden when present', () {
+      final json = sampleJson()..['hidden'] = true;
+      final ride = Ride.fromJson(json);
+      expect(ride.hidden, true);
+    });
+
+    test('copyWith updates hidden without losing other fields', () {
+      final ride = Ride.fromJson(sampleJson());
+      final hidden = ride.copyWith(hidden: true);
+      expect(hidden.hidden, true);
+      expect(hidden.title, ride.title);
+    });
+
     test('speedScore and speedingEvents default to null when absent (older rides)', () {
       final ride = Ride.fromJson(sampleJson());
       expect(ride.speedScore, isNull);

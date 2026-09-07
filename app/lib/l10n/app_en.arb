@@ -93,7 +93,11 @@
   "ridersLabel": "RIDERS",
   "addRiderLabel": "Add a rider",
   "rideTitleRequired": "Give your ride a title.",
-  "actionSaveRide": "Save Ride",
+  "actionPublishRide": "Publish Ride",
+  "hideRideToggleLabel": "Hide this ride",
+  "hideRideToggleDescription": "The ride is always recorded and still counts towards your progress, but stays private: neither your friends nor your riding companions will see it.",
+  "rideVisibilityHiddenAction": "Ride hidden · make it visible",
+  "rideVisibilityVisibleAction": "Ride visible · hide it",
 
   "rideNotFound": "Ride not found.",
   "rideLoadError": "Could not load this ride.",

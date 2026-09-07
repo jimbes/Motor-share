@@ -42,6 +42,7 @@ class Ride {
   const Ride({
     required this.id,
     this.status = 'published',
+    this.hidden = false,
     required this.title,
     this.description,
     required this.startedAt,
@@ -71,6 +72,12 @@ class Ride {
 
   final int id;
   final String status;
+
+  /// True when the owner has chosen to keep this ride to themselves. It is
+  /// still fully recorded and counted (XP, badges, territories) - hiding it
+  /// only ever affects who else can see it. See the backend's
+  /// Ride::isVisibleTo().
+  final bool hidden;
   final String title;
   final String? description;
   final DateTime startedAt;
@@ -113,10 +120,12 @@ class Ride {
     bool? likedByMe,
     List<RideComment>? comments,
     int? commentsCount,
+    bool? hidden,
   }) {
     return Ride(
       id: id,
       status: status,
+      hidden: hidden ?? this.hidden,
       title: title,
       description: description,
       startedAt: startedAt,
@@ -149,6 +158,7 @@ class Ride {
     return Ride(
       id: json['id'] as int,
       status: json['status'] as String? ?? 'published',
+      hidden: json['hidden'] as bool? ?? false,
       title: json['title'] as String,
       description: json['description'] as String?,
       startedAt: DateTime.parse(json['started_at'] as String),

@@ -80,6 +80,7 @@ void main() {
         ),
         photos: const [PersistedPhoto(path: '/tmp/b.jpg')],
         companionUsernames: const ['alex', 'sam'],
+        hidden: true,
       );
 
       final restored = RidePendingFinish.fromJson(draft.toJson());
@@ -94,9 +95,10 @@ void main() {
       expect(restored.sensorStats?.maxLeanAngleRightDeg, 38);
       expect(restored.photos.single.path, '/tmp/b.jpg');
       expect(restored.companionUsernames, ['alex', 'sam']);
+      expect(restored.hidden, true);
     });
 
-    test('description and bike id default to null when absent', () {
+    test('description, bike id and hidden default when absent', () {
       final draft = RidePendingFinish(
         rideId: 7,
         title: 'Morning Ride',
@@ -114,6 +116,7 @@ void main() {
       expect(restored.description, isNull);
       expect(restored.bikeId, isNull);
       expect(restored.sensorStats, isNull);
+      expect(restored.hidden, false);
     });
   });
 }
