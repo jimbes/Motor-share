@@ -76,6 +76,7 @@ class RideRepository {
     required double maxSpeedKmh,
     required List<TrackPoint> track,
     RideSensorStats? sensorStats,
+    bool hidden = false,
   }) async {
     final response = await _client.dio.patch(
       '/rides/$rideId/finish',
@@ -90,10 +91,16 @@ class RideRepository {
         'max_speed_kmh': maxSpeedKmh,
         'track': track.map((p) => p.toJson()).toList(),
         if (sensorStats != null) 'sensor_stats': sensorStats.toJson(),
+        'hidden': hidden,
       },
     );
     return FinishRideResult.fromJson(response.data as Map<String, dynamic>);
   }
+
+  /// Shares (false) or unshares (true) an already-published ride. The
+  /// rider's own copy is never affected either way - only who else sees it.
+  Future<void> updateVisibility(int rideId, {required bool hidden}) =>
+      _client.dio.patch('/rides/$rideId/visibility', data: {'hidden': hidden});
 
   /// Abandons a ride started with [start] without publishing it. Any points
   /// of interest already added during it stay visible.

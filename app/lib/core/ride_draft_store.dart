@@ -148,6 +148,7 @@ class RidePendingFinish {
     this.sensorStats,
     required this.photos,
     required this.companionUsernames,
+    this.hidden = false,
   });
 
   final int rideId;
@@ -162,6 +163,7 @@ class RidePendingFinish {
   final RideSensorStats? sensorStats;
   final List<PersistedPhoto> photos;
   final List<String> companionUsernames;
+  final bool hidden;
 
   Map<String, dynamic> toJson() => {
     'ride_id': rideId,
@@ -176,6 +178,7 @@ class RidePendingFinish {
     if (sensorStats != null) 'sensor_stats': sensorStats!.toJson(),
     'photos': photos.map((p) => p.toJson()).toList(),
     'companion_usernames': companionUsernames,
+    'hidden': hidden,
   };
 
   factory RidePendingFinish.fromJson(Map<String, dynamic> json) =>
@@ -203,6 +206,7 @@ class RidePendingFinish {
             (json['companion_usernames'] as List<dynamic>? ?? const [])
                 .map((e) => e as String)
                 .toList(),
+        hidden: json['hidden'] as bool? ?? false,
       );
 }
 

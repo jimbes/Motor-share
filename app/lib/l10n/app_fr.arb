@@ -68,7 +68,11 @@
   "ridersLabel": "MOTARDS",
   "addRiderLabel": "Ajouter un motard",
   "rideTitleRequired": "Donnez un titre à votre trajet.",
-  "actionSaveRide": "Enregistrer le trajet",
+  "actionPublishRide": "Publier le trajet",
+  "hideRideToggleLabel": "Masquer ce trajet",
+  "hideRideToggleDescription": "Le trajet est toujours enregistré et compte pour votre progression, mais reste privé : ni vos amis ni vos compagnons de route ne le verront.",
+  "rideVisibilityHiddenAction": "Trajet masqué · le rendre visible",
+  "rideVisibilityVisibleAction": "Trajet visible · le masquer",
 
   "rideNotFound": "Trajet introuvable.",
   "rideLoadError": "Impossible de charger ce trajet.",

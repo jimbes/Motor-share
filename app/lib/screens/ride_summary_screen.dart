@@ -51,6 +51,7 @@ class RideSummaryScreen extends StatefulWidget {
     this.initialBikeId,
     this.recoveredCompanionUsernames = const [],
     this.autoSave = false,
+    this.initialHidden = false,
   }) : _mode = _Mode.save,
        justFinishedRewards = null;
 
@@ -71,7 +72,8 @@ class RideSummaryScreen extends StatefulWidget {
        initialDescription = null,
        initialBikeId = null,
        recoveredCompanionUsernames = const [],
-       autoSave = false;
+       autoSave = false,
+       initialHidden = false;
 
   final _Mode _mode;
   final int rideId;
@@ -100,6 +102,11 @@ class RideSummaryScreen extends StatefulWidget {
   /// immediate save attempt instead of waiting for the rider to tap Save.
   final bool autoSave;
 
+  /// Prefilled from a recovered pending finish, same reasoning as
+  /// [initialTitle] - the rider's "masquer ce trajet" choice shouldn't be
+  /// lost to a retry either.
+  final bool initialHidden;
+
   @override
   State<RideSummaryScreen> createState() => _RideSummaryScreenState();
 }
@@ -115,6 +122,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     widget.initialPhotos,
   );
   final List<UserSummary> _selectedCompanions = [];
+  late bool _hidden = widget.initialHidden;
   bool _saving = false;
   String? _saveError;
   bool _finishConfirmed = false;
@@ -126,6 +134,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   Ride? _ride;
   bool _loadingRide = true;
   String? _loadError;
+  bool _togglingVisibility = false;
   final _commentController = TextEditingController();
   bool _postingComment = false;
 
@@ -243,6 +252,30 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     setState(() => _selectedCompanions.removeWhere((r) => r.id == rider.id));
   }
 
+  /// The choice offered when finishing a ride isn't the only chance to make
+  /// it - the owner can hide or unhide any of their own published rides
+  /// from here too, any time.
+  Future<void> _toggleVisibility() async {
+    final ride = _ride;
+    if (ride == null) return;
+
+    setState(() => _togglingVisibility = true);
+    final nextHidden = !ride.hidden;
+    try {
+      await context.read<RideRepository>().updateVisibility(
+        ride.id,
+        hidden: nextHidden,
+      );
+      if (mounted) setState(() => _ride = ride.copyWith(hidden: nextHidden));
+    } catch (_) {
+      // Non-fatal - the toggle simply didn't take; the displayed state
+      // still matches the server since it was never optimistically
+      // updated, so the rider can just tap it again.
+    } finally {
+      if (mounted) setState(() => _togglingVisibility = false);
+    }
+  }
+
   Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) {
       setState(
@@ -282,6 +315,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             .map((p) => PersistedPhoto(path: p.file.path, lat: p.lat, lng: p.lng))
             .toList(),
         companionUsernames: companionUsernames.toList(),
+        hidden: _hidden,
       ),
     );
 
@@ -297,6 +331,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         maxSpeedKmh: widget.maxSpeedKmh!,
         track: widget.track!,
         sensorStats: widget.sensorStats,
+        hidden: _hidden,
       );
       final ride = result.ride;
       _finishConfirmed = true;
@@ -596,6 +631,35 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.hideRideToggleLabel,
+                          style: RedlText.body(fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.hideRideToggleDescription,
+                          style: RedlText.meta(
+                            color: RedlColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _hidden,
+                    activeTrackColor: RedlColors.accent,
+                    onChanged: (value) => setState(() => _hidden = value),
+                  ),
+                ],
+              ),
               if (_saveError != null) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -608,7 +672,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               ],
               const SizedBox(height: 24),
               RedlPrimaryButton(
-                label: l10n.actionSaveRide,
+                label: l10n.actionPublishRide,
                 onPressed: _save,
                 loading: _saving,
               ),
@@ -668,6 +732,51 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                     ride.participants.map((r) => r.name).join(', '),
                   ),
                   style: RedlText.meta(color: RedlColors.textSecondary),
+                ),
+              ],
+              // A hidden ride is only ever returned to its own owner (see
+              // the backend's Ride::isVisibleTo()), so seeing this ride at
+              // all with `hidden: true` already implies myUserId is its
+              // owner - no extra ownership check needed here.
+              if (ride.hidden) ...[
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: _togglingVisibility ? null : _toggleVisibility,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: RedlColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.rideVisibilityHiddenAction,
+                        style: RedlText.meta(color: RedlColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (ride.user.id == myUserId) ...[
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: _togglingVisibility ? null : _toggleVisibility,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.public,
+                        size: 14,
+                        color: RedlColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.rideVisibilityVisibleAction,
+                        style: RedlText.meta(color: RedlColors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(height: 16),

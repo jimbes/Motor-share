@@ -115,6 +115,7 @@ class _RecordScreenState extends State<RecordScreen> {
             initialBikeId: pendingFinish.bikeId,
             recoveredCompanionUsernames: pendingFinish.companionUsernames,
             autoSave: true,
+            initialHidden: pendingFinish.hidden,
           ),
         ),
       );
