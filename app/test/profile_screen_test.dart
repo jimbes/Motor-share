@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -50,6 +51,24 @@ class _FakeRewardRepository implements RewardRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Mocks the permission_handler plugin channel so
+/// `_BatteryReliabilityRow` (Android-only) resolves deterministically
+/// instead of leaving its status permanently null - which a real device
+/// never does, but an un-mocked platform channel in a widget test does,
+/// silently leaving the row's content unrendered and any bug in it
+/// uncovered.
+void _mockBatteryOptimizationStatus(bool granted) {
+  const channel = MethodChannel('flutter.baseflow.com/permissions/methods');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(channel, (call) async {
+    if (call.method == 'checkPermissionStatus') return granted ? 1 : 0;
+    if (call.method == 'requestPermissions') {
+      return {16: granted ? 1 : 0}; // Permission.ignoreBatteryOptimizations.value
+    }
+    return null;
+  });
+}
+
 Widget _profileScreen() {
   final apiClient = ApiClient();
   final auth = AuthProvider(
@@ -85,6 +104,7 @@ void main() {
   // section - which is exactly how it reached a real phone unnoticed, since
   // nothing rendered this screen in CI.
   testWidgets('Profile screen renders the rewards block without a build error', (tester) async {
+    _mockBatteryOptimizationStatus(true);
     await tester.pumpWidget(_profileScreen());
     await tester.pumpAndSettle();
 
@@ -98,10 +118,68 @@ void main() {
   });
 
   testWidgets('Profile screen renders the rider stats row', (tester) async {
+    _mockBatteryOptimizationStatus(true);
     await tester.pumpWidget(_profileScreen());
     await tester.pumpAndSettle();
 
     expect(find.text('7'), findsOneWidget);
     expect(find.text('148 km'), findsOneWidget);
+  });
+
+  group('Battery reliability row', () {
+    const channel = MethodChannel('flutter.baseflow.com/permissions/methods');
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    testWidgets('shows the exempt state without a build error when already granted', (tester) async {
+      _mockBatteryOptimizationStatus(true);
+      await tester.pumpWidget(_profileScreen());
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ErrorWidget), findsNothing);
+      expect(find.text('GPS tracking reliability'), findsOneWidget);
+      expect(
+        find.text('REDL is exempt from battery savings - tracking keeps going even with the phone locked.'),
+        findsOneWidget,
+      );
+      expect(find.text('Fix it'), findsNothing);
+    });
+
+    testWidgets('offers a fix action when the exemption is missing', (tester) async {
+      _mockBatteryOptimizationStatus(false);
+      await tester.pumpWidget(_profileScreen());
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ErrorWidget), findsNothing);
+      expect(
+        find.text('The system can cut GPS tracking mid-ride when the screen is locked. Fix that once and for all.'),
+        findsOneWidget,
+      );
+      expect(find.text('Fix it'), findsOneWidget);
+    });
+
+    testWidgets('tapping Fix it requests the exemption and refreshes the row', (tester) async {
+      _mockBatteryOptimizationStatus(false);
+      await tester.pumpWidget(_profileScreen());
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Fix it'));
+      await tester.pumpAndSettle();
+      expect(find.text('Fix it'), findsOneWidget);
+
+      // The request itself grants it this time - simulates the rider
+      // accepting the OS dialog.
+      _mockBatteryOptimizationStatus(true);
+      await tester.tap(find.text('Fix it'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Fix it'), findsNothing);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    });
   });
 }
