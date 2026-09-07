@@ -259,6 +259,9 @@
   "axisBrakingLabel": "BRAKING",
   "axisAccelerationLabel": "ACCELERATION",
   "sensorsDisabledHint": "Enable sensors on your next ride to see these statistics.",
+  "chartSpeedTitle": "SPEED",
+  "chartElevationTitle": "ELEVATION",
+  "chartsUnavailableHint": "Not enough GPS points on this ride to plot any curves.",
   "sensorsSettingsLinkAction": "Go to sensor settings",
 
   "territoryMapTitle": "Territories",
