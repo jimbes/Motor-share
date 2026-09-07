@@ -41,6 +41,47 @@ enum RecordingState { idle, recording, paused, stopped }
 
 const _pauseResumeButtonId = 'pause_resume';
 
+/// [foregroundNotificationConfig] is load-bearing, and not for the
+/// notification: it selects which code path geolocator's Android plugin
+/// takes, and only one of the two survives the rider's screen being locked
+/// for a while.
+///
+/// Without it, `StreamHandlerImpl.onListen` builds a plain `locationClient`
+/// and hands it the Activity. Its `setActivity(null)` - reached from the
+/// plugin's `onDetachedFromActivity`, which Android fires when it destroys
+/// a backgrounded Activity under memory pressure, and on configuration
+/// changes - then does `if (activity == null && locationClient != null)
+/// stopListening()`, tearing the whole EventChannel down. Position updates
+/// stop for good, silently: no error reaches Dart, the ride keeps
+/// "recording" with its timer and notification intact, and the track just
+/// ends mid-ride.
+///
+/// With it, `onListen` takes the other branch - geolocator's own foreground
+/// service - and leaves `locationClient` null, so that teardown never
+/// triggers. The Activity is only ever used for location-settings
+/// resolution dialogs (it is `@Nullable` throughout `FusedLocationClient`),
+/// never to receive fixes, so nothing is lost by outliving it.
+///
+/// The cost is a second ongoing notification next to the one
+/// flutter_foreground_task already posts. It is deliberately dismissible
+/// ([setOngoing] false) so a rider can swipe it away and keep only REDL's
+/// own stats notification; the service keeps running either way.
+@visibleForTesting
+AndroidSettings buildRecordingLocationSettings() {
+  return AndroidSettings(
+    accuracy: LocationAccuracy.high,
+    distanceFilter: 0,
+    intervalDuration: const Duration(seconds: 2),
+    foregroundNotificationConfig: const ForegroundNotificationConfig(
+      notificationTitle: 'REDL is tracking your ride',
+      notificationText: 'Keeping GPS alive while the screen is off.',
+      notificationChannelName: 'Ride GPS tracking',
+      enableWakeLock: true,
+      setOngoing: false,
+    ),
+  );
+}
+
 /// Live GPS ride recording: filters noisy fixes, accumulates distance via
 /// the haversine formula, and tracks elapsed time - independent of any
 /// widget lifecycle so a screen rebuild never loses in-progress data.
@@ -368,14 +409,8 @@ class RecordingController extends ChangeNotifier {
   }
 
   void _subscribe() {
-    final settings = AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 0,
-      intervalDuration: const Duration(seconds: 2),
-    );
-
     _positionSub = Geolocator.getPositionStream(
-      locationSettings: settings,
+      locationSettings: buildRecordingLocationSettings(),
     ).listen(_onPosition);
   }
 
