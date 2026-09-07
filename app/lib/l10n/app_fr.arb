@@ -197,6 +197,9 @@
   "axisBrakingLabel": "FREINAGE",
   "axisAccelerationLabel": "ACCÉLÉRATION",
   "sensorsDisabledHint": "Active les capteurs au prochain enregistrement pour voir ces statistiques.",
+  "chartSpeedTitle": "VITESSE",
+  "chartElevationTitle": "ALTITUDE",
+  "chartsUnavailableHint": "Pas assez de points GPS sur cette sortie pour tracer des courbes.",
   "sensorsSettingsLinkAction": "Aller aux réglages des capteurs",
 
   "territoryMapTitle": "Territoires",

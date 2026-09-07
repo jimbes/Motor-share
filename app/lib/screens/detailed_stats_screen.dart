@@ -9,16 +9,18 @@ import 'package:share_plus/share_plus.dart';
 
 import '../core/format.dart';
 import '../core/models/ride.dart';
-import '../core/models/track_point.dart';
+import '../core/ride_chart_series.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/redl_colors.dart';
 import '../theme/redl_spacing.dart';
 import '../theme/redl_text_styles.dart';
 import '../widgets/redl_buttons.dart';
+import '../widgets/ride_metric_chart.dart';
 import '../widgets/redl_logo.dart';
 
 /// Post-ride detailed statistics (REDL project doc, section 8.3.1): a
-/// speed/time graph, a "Parcours" grid derived from the GPS track alone
+/// speed and an altitude curve plotted against distance, a "Parcours" grid
+/// derived from the GPS track alone
 /// (available for every ride), and a "Style de conduite" grid from the
 /// optional sensor capture (project doc 9.5) - replaced by a hint to enable
 /// sensors when that ride didn't have them on.
@@ -56,10 +58,7 @@ class DetailedStatsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(
-                    height: 180,
-                    child: _SpeedTimeChart(track: ride.track ?? ride.polyline),
-                  ),
+                  ..._buildCharts(context, l10n),
                   const SizedBox(height: 24),
                   Text(l10n.statsCourseSectionLabel, style: RedlText.eyebrow()),
                   const SizedBox(height: 10),
@@ -184,6 +183,52 @@ class DetailedStatsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// One chart per metric, each only shown when the ride actually carries
+  /// the samples for it - altitude in particular is missing from rides
+  /// recorded before it was captured, and an empty axis says less than no
+  /// chart at all.
+  List<Widget> _buildCharts(BuildContext context, AppLocalizations l10n) {
+    final track = ride.track ?? ride.polyline;
+    final speed = buildSpeedOverDistanceSeries(track);
+    final elevation = buildElevationOverDistanceSeries(track);
+
+    return [
+      if (speed != null)
+        RideMetricChart(
+          title: l10n.chartSpeedTitle,
+          series: speed,
+          unit: 'km/h',
+          // Not the accent itself: at ~2:1 on this surface a 2px line of it
+          // is effectively invisible. Its tint clears 10:1.
+          lineColor: RedlColors.accentTint,
+          baselineAtZero: true,
+        ),
+      if (speed != null && elevation != null) const SizedBox(height: 12),
+      if (elevation != null)
+        RideMetricChart(
+          title: l10n.chartElevationTitle,
+          series: elevation,
+          unit: 'm',
+          lineColor: RedlColors.textSecondary,
+        ),
+      if (speed == null && elevation == null)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: RedlColors.surface2,
+            borderRadius: BorderRadius.circular(RedlRadius.sm),
+          ),
+          child: Text(
+            l10n.chartsUnavailableHint,
+            style: RedlText.body(
+              fontSize: 13,
+              color: RedlColors.textSecondary,
+            ),
+          ),
+        ),
+    ];
   }
 
   Future<void> _share(BuildContext context, GlobalKey boundaryKey) async {
@@ -426,92 +471,4 @@ class _StatsGridSection extends StatelessWidget {
           .toList(),
     );
   }
-}
-
-/// A minimal speed/time line chart drawn directly with a [CustomPainter] -
-/// no charting dependency needed for a single line.
-class _SpeedTimeChart extends StatelessWidget {
-  const _SpeedTimeChart({required this.track});
-
-  final List<TrackPoint> track;
-
-  @override
-  Widget build(BuildContext context) {
-    final points = <Offset>[];
-    DateTime? firstT;
-    var maxSpeed = 1.0;
-
-    for (final p in track) {
-      final speed = p.speed ?? 0.0;
-      final tRaw = p.t;
-      if (tRaw == null) continue;
-      final t = DateTime.tryParse(tRaw);
-      if (t == null) continue;
-      firstT ??= t;
-      final elapsed = t.difference(firstT).inSeconds.toDouble();
-      maxSpeed = speed > maxSpeed ? speed : maxSpeed;
-      points.add(Offset(elapsed, speed));
-    }
-
-    if (points.length < 2) {
-      return Center(
-        child: Text('—', style: RedlText.body(color: RedlColors.textMuted)),
-      );
-    }
-
-    return CustomPaint(
-      size: Size.infinite,
-      painter: _SpeedTimePainter(
-        points: points,
-        maxSpeed: maxSpeed,
-        maxTime: points.last.dx == 0 ? 1 : points.last.dx,
-      ),
-    );
-  }
-}
-
-class _SpeedTimePainter extends CustomPainter {
-  _SpeedTimePainter({
-    required this.points,
-    required this.maxSpeed,
-    required this.maxTime,
-  });
-
-  final List<Offset> points;
-  final double maxSpeed;
-  final double maxTime;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final axisPaint = Paint()
-      ..color = RedlColors.textMuted.withValues(alpha: 0.3)
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(0, size.height),
-      Offset(size.width, size.height),
-      axisPaint,
-    );
-
-    final linePaint = Paint()
-      ..color = RedlColors.accent
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeJoin = StrokeJoin.round;
-
-    final path = Path();
-    for (var i = 0; i < points.length; i++) {
-      final x = (points[i].dx / maxTime) * size.width;
-      final y = size.height - (points[i].dy / maxSpeed) * size.height;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    canvas.drawPath(path, linePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SpeedTimePainter oldDelegate) =>
-      oldDelegate.points != points;
 }
